@@ -6,97 +6,331 @@
 
   <title>Հայաստանի ջրային ատլաս</title>
 
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
   <style>
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 0 20px;
-      line-height: 1.6;
+      background: #f5f7f8;
+      color: #222;
+    }
+
+    header {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 20px 18px;
     }
 
     h1 {
-      margin-bottom: 8px;
+      margin: 0 0 8px;
+    }
+
+    header p {
+      margin: 0;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px 40px;
+    }
+
+    #map {
+      height: 600px;
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background: #ddd;
     }
 
     #status {
-      margin: 20px 0;
+      margin: 15px 0;
+      font-weight: bold;
     }
 
-    li {
+    #objects {
+      padding-left: 22px;
+    }
+
+    #objects li {
       margin: 6px 0;
+    }
+
+    .object-type {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    footer {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+      border-top: 1px solid #ddd;
+      font-size: 0.9em;
+      color: #666;
     }
   </style>
 </head>
 
 <body>
 
+<header>
   <h1>Հայաստանի ջրային ատլաս</h1>
 
   <p>
-    Հայաստանի ջրային օբյեկտների տեղեկատվական ատլաս
+    Հայաստանի գետերի, լճերի, ջրվեժների և այլ ջրային
+    օբյեկտների տեղեկատվական ատլաս
+  </p>
+</header>
+
+<main>
+
+  <h2>Քարտեզ</h2>
+
+  <div id="map"></div>
+
+  <p id="status">
+    Բեռնվում են տվյալները...
   </p>
 
-  <h2>Բազայի փորձնական տվյալներ</h2>
-
-  <p id="status">Բեռնվում են տվյալները...</p>
+  <h2>Ջրային օբյեկտներ</h2>
 
   <ul id="objects"></ul>
 
-  <script>
-    const SUPABASE_URL =
-      'https://ignkzfqrLgkhboqhhxew.supabase.co';
+</main>
 
-    const SUPABASE_KEY =
-      'sb_publishable_3TdwbfrdPzxjKfPIUg---w_pYyntp1o';
+<footer>
+  Հայաստանի ջրային ատլաս — փորձնական տարբերակ
+</footer>
 
-    async function loadObjects() {
 
-      const url =
-        `${SUPABASE_URL}/rest/v1/water_objects` +
-        `?select=id,type,name_hy&order=id.asc&limit=20`;
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
 
-      try {
 
-        const response = await fetch(url, {
+<script>
+
+  /* --------------------------------
+     SUPABASE
+  -------------------------------- */
+
+  const SUPABASE_URL =
+    'https://ignkzfqrLgkhboqhhxew.supabase.co';
+
+  const SUPABASE_KEY =
+    'sb_publishable_3TdwbfrdPzxjKfPIUg---w_pYyntp1o';
+
+
+  /* --------------------------------
+     MAP
+  -------------------------------- */
+
+  const map = L.map('map').setView(
+    [40.20, 44.80],
+    8
+  );
+
+  L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      maxZoom: 19,
+      attribution:
+        '&copy; OpenStreetMap contributors'
+    }
+  ).addTo(map);
+
+
+  /* --------------------------------
+     LOAD DATA
+  -------------------------------- */
+
+  async function loadObjects() {
+
+    const url =
+      `${SUPABASE_URL}/rest/v1/water_objects` +
+      `?select=id,type,name_hy,latitude,longitude,elevation_m,height_m,height_min_m,height_max_m` +
+      `&order=name_hy.asc`;
+
+    try {
+
+      const response = await fetch(
+        url,
+        {
           headers: {
             apikey: SUPABASE_KEY
           }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
         }
+      );
 
-        const data = await response.json();
-
-        const list = document.getElementById('objects');
-        const status = document.getElementById('status');
-
-        list.innerHTML = '';
-
-        data.forEach(item => {
-          const li = document.createElement('li');
-
-          li.textContent =
-            `${item.name_hy} — ${item.type}`;
-
-          list.appendChild(li);
-        });
-
-        status.textContent =
-          `Բազայից ստացվել է ${data.length} օբյեկտ։`;
-
-      } catch (error) {
-
-        document.getElementById('status').textContent =
-          `Տվյալների ստացման սխալ՝ ${error.message}`;
-
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}`
+        );
       }
+
+      const data = await response.json();
+
+      showList(data);
+      showMarkers(data);
+
+      document.getElementById(
+        'status'
+      ).textContent =
+        `Բազայից ստացվել է ${data.length} ջրային օբյեկտ։`;
+
     }
 
-    loadObjects();
-  </script>
+    catch (error) {
+
+      document.getElementById(
+        'status'
+      ).textContent =
+        `Տվյալների ստացման սխալ՝ ${error.message}`;
+
+    }
+
+  }
+
+
+  /* --------------------------------
+     OBJECT LIST
+  -------------------------------- */
+
+  function showList(data) {
+
+    const list =
+      document.getElementById('objects');
+
+    list.innerHTML = '';
+
+    data.forEach(item => {
+
+      const li =
+        document.createElement('li');
+
+      const name =
+        document.createElement('strong');
+
+      name.textContent =
+        item.name_hy || 'Անանուն օբյեկտ';
+
+      li.appendChild(name);
+
+      const type =
+        document.createElement('span');
+
+      type.className =
+        'object-type';
+
+      type.textContent =
+        ` — ${item.type}`;
+
+      li.appendChild(type);
+
+      list.appendChild(li);
+
+    });
+
+  }
+
+
+  /* --------------------------------
+     MAP MARKERS
+  -------------------------------- */
+
+  function showMarkers(data) {
+
+    const mappedObjects =
+      data.filter(
+        item =>
+          item.latitude !== null &&
+          item.longitude !== null
+      );
+
+    mappedObjects.forEach(item => {
+
+      const marker =
+        L.marker(
+          [
+            item.latitude,
+            item.longitude
+          ]
+        ).addTo(map);
+
+
+      let popup =
+        `<strong>${item.name_hy}</strong>`;
+
+
+      if (item.height_m !== null) {
+
+        popup +=
+          `<br>Բարձրություն՝ ${item.height_m} մ`;
+
+      }
+
+      else if (
+        item.height_min_m !== null &&
+        item.height_max_m !== null
+      ) {
+
+        popup +=
+          `<br>Բարձրություն՝ ` +
+          `${item.height_min_m}–${item.height_max_m} մ`;
+
+      }
+
+
+      if (item.elevation_m !== null) {
+
+        popup +=
+          `<br>Բարձրությունը ծովի մակարդակից՝ ` +
+          `${item.elevation_m} մ`;
+
+      }
+
+
+      marker.bindPopup(popup);
+
+    });
+
+
+    /*
+      Եթե քարտեզագրված օբյեկտներ կան,
+      քարտեզը ավտոմատ ընդգրկում է բոլորը։
+    */
+
+    if (mappedObjects.length > 0) {
+
+      const bounds =
+        mappedObjects.map(
+          item => [
+            item.latitude,
+            item.longitude
+          ]
+        );
+
+      map.fitBounds(
+        bounds,
+        {
+          padding: [30, 30]
+        }
+      );
+
+    }
+
+  }
+
+
+  loadObjects();
+
+</script>
 
 </body>
 </html>
