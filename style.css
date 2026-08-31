@@ -570,3 +570,51 @@ body {
   }
 
 }
+/* PHOTO AND COPYRIGHT */
+
+.details-photo-placeholder {
+  padding: 0;
+}
+
+.details-photo-placeholder img {
+  width: 100%;
+  height: auto;
+  max-height: 560px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-credit {
+  width: 100%;
+  padding: 9px 14px;
+
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+
+  background: #f7fafb;
+  border-top: 1px solid var(--border);
+
+  color: var(--muted);
+  font-size: 12px;
+  text-align: left;
+}
+
+.photo-credit a {
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.photo-credit a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+
+  .photo-credit {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+}
