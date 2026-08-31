@@ -603,10 +603,10 @@ async function loadObjectPhotos(objectId) {
     image.loading = 'lazy';
 
     image.style.width = '100%';
-    image.style.height = '100%';
-    image.style.maxHeight = '560px';
-    image.style.objectFit = 'cover';
-    image.style.display = 'block';
+image.style.height = '400px';
+image.style.objectFit = 'cover';
+image.style.objectPosition = 'center';
+image.style.display = 'block';
 
     photoBox.appendChild(image);
 
