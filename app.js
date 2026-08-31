@@ -12,7 +12,12 @@ const TYPE_LABELS = {
   reservoir: 'Ջրամբար',
   canal: 'Ջրանցք',
   spring: 'Աղբյուր',
-  wetland: 'Ճահիճ / խոնավ տարածք'
+  wetland: 'Խոնավ տարածք'
+};
+
+
+const STATUS_LABELS = {
+  natural: 'Բնական'
 };
 
 
@@ -25,9 +30,21 @@ const DATA_SCOPE_LABELS = {
 };
 
 
+/* =========================================
+   MAP
+   ========================================= */
+
+const ARMENIA_CENTER = [
+  40.05,
+  45.05
+];
+
+const ARMENIA_ZOOM = 8;
+
+
 const map = L.map('map').setView(
-  [40.2, 44.8],
-  8
+  ARMENIA_CENTER,
+  ARMENIA_ZOOM
 );
 
 
@@ -35,7 +52,8 @@ L.tileLayer(
   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution:
+      '&copy; OpenStreetMap contributors'
   }
 ).addTo(map);
 
@@ -49,11 +67,27 @@ let markers = [];
    ========================================= */
 
 function typeLabel(type) {
-  return TYPE_LABELS[type] || type || 'Այլ';
+
+  return (
+    TYPE_LABELS[type] ||
+    type ||
+    'Այլ'
+  );
+}
+
+
+function statusLabel(status) {
+
+  return (
+    STATUS_LABELS[status] ||
+    status ||
+    ''
+  );
 }
 
 
 function clearMarkers() {
+
   markers.forEach(marker => {
     map.removeLayer(marker);
   });
@@ -63,6 +97,7 @@ function clearMarkers() {
 
 
 function formatScope(scope) {
+
   if (!scope) {
     return '';
   }
@@ -70,9 +105,14 @@ function formatScope(scope) {
   return scope
     .split(',')
     .map(part => {
-      const key = part.trim();
 
-      return DATA_SCOPE_LABELS[key] || key;
+      const key =
+        part.trim();
+
+      return (
+        DATA_SCOPE_LABELS[key] ||
+        key
+      );
     })
     .join(', ');
 }
@@ -83,6 +123,7 @@ function addDetailField(
   label,
   value
 ) {
+
   if (
     value === null ||
     value === undefined ||
@@ -91,27 +132,45 @@ function addDetailField(
     return;
   }
 
+
   const field =
     document.createElement('div');
 
-  field.className = 'detail-field';
+  field.className =
+    'detail-field';
+
 
   const labelElement =
     document.createElement('span');
 
-  labelElement.className = 'detail-label';
-  labelElement.textContent = label;
+  labelElement.className =
+    'detail-label';
+
+  labelElement.textContent =
+    label;
+
 
   const valueElement =
     document.createElement('span');
 
-  valueElement.className = 'detail-value';
-  valueElement.textContent = value;
+  valueElement.className =
+    'detail-value';
 
-  field.appendChild(labelElement);
-  field.appendChild(valueElement);
+  valueElement.textContent =
+    value;
 
-  container.appendChild(field);
+
+  field.appendChild(
+    labelElement
+  );
+
+  field.appendChild(
+    valueElement
+  );
+
+  container.appendChild(
+    field
+  );
 }
 
 
@@ -126,6 +185,7 @@ function buildPopup(item) {
     `${item.name_hy || 'Անանուն օբյեկտ'}` +
     `</div>`;
 
+
   html +=
     `<div class="popup-row">` +
     `<strong>Տեսակ՝</strong> ` +
@@ -134,6 +194,7 @@ function buildPopup(item) {
 
 
   if (item.province) {
+
     html +=
       `<div class="popup-row">` +
       `<strong>Մարզ՝</strong> ` +
@@ -143,6 +204,7 @@ function buildPopup(item) {
 
 
   if (item.basin) {
+
     html +=
       `<div class="popup-row">` +
       `<strong>Ավազան՝</strong> ` +
@@ -152,6 +214,7 @@ function buildPopup(item) {
 
 
   if (item.length_km !== null) {
+
     html +=
       `<div class="popup-row">` +
       `<strong>Երկարություն՝</strong> ` +
@@ -183,6 +246,7 @@ function buildPopup(item) {
 
 
   if (item.elevation_m !== null) {
+
     html +=
       `<div class="popup-row">` +
       `<strong>Ծովի մակարդակից՝</strong> ` +
@@ -204,18 +268,20 @@ function renderMarkers(data) {
   clearMarkers();
 
 
-  const mapped = data.filter(item =>
-    item.latitude !== null &&
-    item.longitude !== null
-  );
+  const mapped =
+    data.filter(item =>
+      item.latitude !== null &&
+      item.longitude !== null
+    );
 
 
   mapped.forEach(item => {
 
-    const marker = L.marker([
-      item.latitude,
-      item.longitude
-    ]).addTo(map);
+    const marker =
+      L.marker([
+        item.latitude,
+        item.longitude
+      ]).addTo(map);
 
 
     marker.bindPopup(
@@ -223,12 +289,16 @@ function renderMarkers(data) {
     );
 
 
-    marker.waterObjectId = item.id;
+    marker.waterObjectId =
+      item.id;
 
 
-    marker.on('click', () => {
-      openObjectDetails(item);
-    });
+    marker.on(
+      'click',
+      () => {
+        openObjectDetails(item);
+      }
+    );
 
 
     markers.push(marker);
@@ -241,38 +311,54 @@ function renderMarkers(data) {
       `Քարտեզագրված՝ ${mapped.length}`;
 
 
-if (mapped.length > 0) {
-
   /*
-    Երբ ցուցադրվում է ամբողջ բազան,
-    քարտեզը ցույց ենք տալիս Հայաստանի ամբողջ տարածքով։
+    Եթե ցուցադրվում է ամբողջ բազան,
+    Հայաստանը պահում ենք ֆիքսված
+    հիմնական տեսքով։
   */
 
-  if (data.length === allObjects.length) {
+  if (
+    data.length ===
+    allObjects.length
+  ) {
 
-const armeniaBounds = [
-  [38.82, 43.95],
-  [41.32, 46.20]
-];
+    map.setView(
+      ARMENIA_CENTER,
+      ARMENIA_ZOOM
+    );
 
-map.fitBounds(
-  armeniaBounds,
-  {
-    padding: [10, 10]
+    return;
   }
-);
 
-  } else {
 
-    /*
-      Որոնման կամ ֆիլտրի դեպքում
-      կենտրոնանում ենք գտնված օբյեկտների վրա։
-    */
+  /*
+    Որոնման կամ ֆիլտրի դեպքում
+    մոտենում ենք գտնված
+    քարտեզագրված օբյեկտներին։
+  */
 
-    const bounds = mapped.map(item => [
-      item.latitude,
-      item.longitude
-    ]);
+  if (mapped.length === 1) {
+
+    map.setView(
+      [
+        mapped[0].latitude,
+        mapped[0].longitude
+      ],
+      13
+    );
+
+    return;
+  }
+
+
+  if (mapped.length > 1) {
+
+    const bounds =
+      mapped.map(item => [
+        item.latitude,
+        item.longitude
+      ]);
+
 
     map.fitBounds(
       bounds,
@@ -282,7 +368,6 @@ map.fitBounds(
       }
     );
   }
-}
 }
 
 
@@ -307,7 +392,8 @@ function renderList(data) {
       document.createElement('li');
 
 
-    li.className = 'object-item';
+    li.className =
+      'object-item';
 
 
     li.innerHTML = `
@@ -325,7 +411,9 @@ function renderList(data) {
       'click',
       () => {
 
-        openObjectDetails(item);
+        openObjectDetails(
+          item
+        );
 
 
         if (
@@ -344,8 +432,8 @@ function renderList(data) {
 
           const marker =
             markers.find(
-              m =>
-                m.waterObjectId ===
+              marker =>
+                marker.waterObjectId ===
                 item.id
             );
 
@@ -358,7 +446,9 @@ function renderList(data) {
     );
 
 
-    list.appendChild(li);
+    list.appendChild(
+      li
+    );
   });
 }
 
@@ -379,13 +469,17 @@ async function openObjectDetails(item) {
 
 
   document
-    .getElementById('details-type')
+    .getElementById(
+      'details-type'
+    )
     .textContent =
       typeLabel(item.type);
 
 
   document
-    .getElementById('details-name')
+    .getElementById(
+      'details-name'
+    )
     .textContent =
       item.name_hy ||
       'Անանուն օբյեկտ';
@@ -511,7 +605,9 @@ async function openObjectDetails(item) {
   addDetailField(
     dataContainer,
     'Կարգավիճակ',
-    item.status
+    statusLabel(
+      item.status
+    )
   );
 
 
@@ -548,37 +644,44 @@ async function openObjectDetails(item) {
   });
 
 
-    await Promise.all([
+  await Promise.all([
     loadObjectSources(item.id),
     loadObjectPhotos(item.id)
   ]);
 }
 
+
 /* =========================================
    PHOTOS
    ========================================= */
 
-async function loadObjectPhotos(objectId) {
+async function loadObjectPhotos(
+  objectId
+) {
 
   const photoBox =
     document.getElementById(
       'details-photo-placeholder'
     );
 
+
   if (!photoBox) {
     return;
   }
+
 
   photoBox.innerHTML = `
     <span>Լուսանկար</span>
     <small>Բեռնվում է...</small>
   `;
 
+
   const url =
     `${SUPABASE_URL}/rest/v1/object_photos` +
     `?object_id=eq.${objectId}` +
     `&select=id,photo_url,thumbnail_url,caption_hy,author,source_url,license,is_primary,sort_order` +
     `&order=is_primary.desc,sort_order.asc`;
+
 
   try {
 
@@ -587,19 +690,24 @@ async function loadObjectPhotos(objectId) {
         url,
         {
           headers: {
-            apikey: SUPABASE_KEY
+            apikey:
+              SUPABASE_KEY
           }
         }
       );
 
+
     if (!response.ok) {
+
       throw new Error(
         `HTTP ${response.status}`
       );
     }
 
+
     const photos =
       await response.json();
+
 
     if (photos.length === 0) {
 
@@ -613,32 +721,59 @@ async function loadObjectPhotos(objectId) {
       return;
     }
 
-    const photo = photos[0];
+
+    const photo =
+      photos[0];
+
 
     photoBox.innerHTML = '';
 
-    const image =
-      document.createElement('img');
 
-    image.src = photo.photo_url;
+    const image =
+      document.createElement(
+        'img'
+      );
+
+
+    image.src =
+      photo.photo_url;
+
 
     image.alt =
       photo.caption_hy ||
       'Ջրային օբյեկտի լուսանկար';
 
-    image.loading = 'lazy';
 
-    image.style.width = '100%';
-image.style.height = '400px';
-image.style.objectFit = 'cover';
-image.style.objectPosition = 'center';
-image.style.display = 'block';
+    image.loading =
+      'lazy';
 
-    photoBox.appendChild(image);
+
+    image.style.width =
+      '100%';
+
+    image.style.height =
+      '400px';
+
+    image.style.objectFit =
+      'cover';
+
+    image.style.objectPosition =
+      'center';
+
+    image.style.display =
+      'block';
+
+
+    photoBox.appendChild(
+      image
+    );
 
 
     const credit =
-      document.createElement('div');
+      document.createElement(
+        'div'
+      );
+
 
     credit.className =
       'photo-credit';
@@ -646,13 +781,17 @@ image.style.display = 'block';
 
     const parts = [];
 
+
     if (photo.author) {
+
       parts.push(
         `Լուսանկար՝ ${photo.author}`
       );
     }
 
+
     if (photo.license) {
+
       parts.push(
         photo.license
       );
@@ -660,10 +799,14 @@ image.style.display = 'block';
 
 
     const creditText =
-      document.createElement('span');
+      document.createElement(
+        'span'
+      );
+
 
     creditText.textContent =
       parts.join(' · ');
+
 
     credit.appendChild(
       creditText
@@ -673,19 +816,26 @@ image.style.display = 'block';
     if (photo.source_url) {
 
       const sourceLink =
-        document.createElement('a');
+        document.createElement(
+          'a'
+        );
+
 
       sourceLink.href =
         photo.source_url;
 
+
       sourceLink.target =
         '_blank';
+
 
       sourceLink.rel =
         'noopener noreferrer';
 
+
       sourceLink.textContent =
         'Աղբյուր';
+
 
       credit.appendChild(
         sourceLink
@@ -702,16 +852,21 @@ image.style.display = 'block';
 
     photoBox.innerHTML = `
       <span>Լուսանկարը չբեռնվեց</span>
-      <small>${error.message}</small>
+      <small>
+        ${error.message}
+      </small>
     `;
   }
 }
+
 
 /* =========================================
    SOURCES
    ========================================= */
 
-async function loadObjectSources(objectId) {
+async function loadObjectSources(
+  objectId
+) {
 
   const container =
     document.getElementById(
@@ -732,13 +887,15 @@ async function loadObjectSources(objectId) {
         url,
         {
           headers: {
-            apikey: SUPABASE_KEY
+            apikey:
+              SUPABASE_KEY
           }
         }
       );
 
 
     if (!response.ok) {
+
       throw new Error(
         `HTTP ${response.status}`
       );
@@ -759,11 +916,14 @@ async function loadObjectSources(objectId) {
 
 
     const sourceIds =
-      [...new Set(
-        links.map(link =>
-          link.source_id
+      [
+        ...new Set(
+          links.map(
+            link =>
+              link.source_id
+          )
         )
-      )];
+      ];
 
 
     const sourceUrl =
@@ -777,13 +937,15 @@ async function loadObjectSources(objectId) {
         sourceUrl,
         {
           headers: {
-            apikey: SUPABASE_KEY
+            apikey:
+              SUPABASE_KEY
           }
         }
       );
 
 
     if (!sourceResponse.ok) {
+
       throw new Error(
         `HTTP ${sourceResponse.status}`
       );
@@ -801,8 +963,8 @@ async function loadObjectSources(objectId) {
 
       const source =
         sources.find(
-          item =>
-            item.id ===
+          source =>
+            source.id ===
             link.source_id
         );
 
@@ -813,7 +975,9 @@ async function loadObjectSources(objectId) {
 
 
       const item =
-        document.createElement('div');
+        document.createElement(
+          'div'
+        );
 
 
       item.className =
@@ -821,7 +985,9 @@ async function loadObjectSources(objectId) {
 
 
       const title =
-        document.createElement('div');
+        document.createElement(
+          'div'
+        );
 
 
       title.className =
@@ -833,20 +999,28 @@ async function loadObjectSources(objectId) {
         'Աղբյուր';
 
 
-      item.appendChild(title);
+      item.appendChild(
+        title
+      );
 
 
       const metaParts = [];
 
 
-      if (source.organization) {
+      if (
+        source.organization
+      ) {
+
         metaParts.push(
           source.organization
         );
       }
 
 
-      if (source.publication_year) {
+      if (
+        source.publication_year
+      ) {
+
         metaParts.push(
           source.publication_year
         );
@@ -860,16 +1034,21 @@ async function loadObjectSources(objectId) {
 
 
       if (scope) {
+
         metaParts.push(
           `օգտագործվել է՝ ${scope}`
         );
       }
 
 
-      if (metaParts.length > 0) {
+      if (
+        metaParts.length > 0
+      ) {
 
         const meta =
-          document.createElement('div');
+          document.createElement(
+            'div'
+          );
 
 
         meta.className =
@@ -880,14 +1059,18 @@ async function loadObjectSources(objectId) {
           metaParts.join(' · ');
 
 
-        item.appendChild(meta);
+        item.appendChild(
+          meta
+        );
       }
 
 
       if (source.url) {
 
         const linkElement =
-          document.createElement('a');
+          document.createElement(
+            'a'
+          );
 
 
         linkElement.className =
@@ -941,7 +1124,8 @@ function getSelectedTypes() {
       '.type-filter:checked'
     )
   ).map(
-    input => input.value
+    input =>
+      input.value
   );
 }
 
@@ -950,7 +1134,9 @@ function applyFilters() {
 
   const search =
     document
-      .getElementById('search')
+      .getElementById(
+        'search'
+      )
       .value
       .trim()
       .toLowerCase();
@@ -961,35 +1147,45 @@ function applyFilters() {
 
 
   const filtered =
-    allObjects.filter(item => {
+    allObjects.filter(
+      item => {
 
-      const matchesSearch =
-        !search ||
-        (item.name_hy || '')
-          .toLowerCase()
-          .includes(search);
+        const matchesSearch =
+          !search ||
+          (item.name_hy || '')
+            .toLowerCase()
+            .includes(search);
 
 
-      const matchesType =
-        selectedTypes.length === 0 ||
-        selectedTypes.includes(
-          item.type
+        const matchesType =
+          selectedTypes.length === 0 ||
+          selectedTypes.includes(
+            item.type
+          );
+
+
+        return (
+          matchesSearch &&
+          matchesType
         );
+      }
+    );
 
 
-      return (
-        matchesSearch &&
-        matchesType
-      );
-    });
+  renderList(
+    filtered
+  );
 
 
-  renderList(filtered);
-  renderMarkers(filtered);
+  renderMarkers(
+    filtered
+  );
 
 
   document
-    .getElementById('status')
+    .getElementById(
+      'status'
+    )
     .textContent =
       `Ցուցադրվում է ${filtered.length} օբյեկտ՝ ընդհանուր ${allObjects.length}-ից։`;
 }
@@ -1014,13 +1210,15 @@ async function loadObjects() {
         url,
         {
           headers: {
-            apikey: SUPABASE_KEY
+            apikey:
+              SUPABASE_KEY
           }
         }
       );
 
 
     if (!response.ok) {
+
       throw new Error(
         `HTTP ${response.status}`
       );
@@ -1031,12 +1229,20 @@ async function loadObjects() {
       await response.json();
 
 
-    renderList(allObjects);
-    renderMarkers(allObjects);
+    renderList(
+      allObjects
+    );
+
+
+    renderMarkers(
+      allObjects
+    );
 
 
     document
-      .getElementById('status')
+      .getElementById(
+        'status'
+      )
       .textContent =
         `Բազայից ստացվել է ${allObjects.length} ջրային օբյեկտ։`;
 
@@ -1044,7 +1250,9 @@ async function loadObjects() {
   } catch (error) {
 
     document
-      .getElementById('status')
+      .getElementById(
+        'status'
+      )
       .textContent =
         `Տվյալների ստացման սխալ՝ ${error.message}`;
   }
@@ -1056,7 +1264,9 @@ async function loadObjects() {
    ========================================= */
 
 document
-  .getElementById('search')
+  .getElementById(
+    'search'
+  )
   .addEventListener(
     'input',
     applyFilters
@@ -1064,7 +1274,9 @@ document
 
 
 document
-  .querySelectorAll('.type-filter')
+  .querySelectorAll(
+    '.type-filter'
+  )
   .forEach(input => {
 
     input.addEventListener(
@@ -1075,7 +1287,9 @@ document
 
 
 document
-  .getElementById('details-close')
+  .getElementById(
+    'details-close'
+  )
   .addEventListener(
     'click',
     () => {
