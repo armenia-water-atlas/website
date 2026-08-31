@@ -1,8 +1,13 @@
 <!DOCTYPE html>
 <html lang="hy">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Հայաստանի ջրային ատլաս</title>
 
@@ -10,327 +15,231 @@
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  >
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f7f8;
-      color: #222;
-    }
-
-    header {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 28px 20px 18px;
-    }
-
-    h1 {
-      margin: 0 0 8px;
-    }
-
-    header p {
-      margin: 0;
-    }
-
-    main {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 20px 40px;
-    }
-
-    #map {
-      height: 600px;
-      width: 100%;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      background: #ddd;
-    }
-
-    #status {
-      margin: 15px 0;
-      font-weight: bold;
-    }
-
-    #objects {
-      padding-left: 22px;
-    }
-
-    #objects li {
-      margin: 6px 0;
-    }
-
-    .object-type {
-      color: #666;
-      font-size: 0.9em;
-    }
-
-    footer {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 20px;
-      border-top: 1px solid #ddd;
-      font-size: 0.9em;
-      color: #666;
-    }
-  </style>
+  <!-- Atlas styles -->
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
+
 
 <body>
 
-<header>
-  <h1>Հայաստանի ջրային ատլաս</h1>
+<header class="site-header">
 
-  <p>
-    Հայաստանի գետերի, լճերի, ջրվեժների և այլ ջրային
-    օբյեկտների տեղեկատվական ատլաս
-  </p>
+  <div class="site-header-inner">
+
+    <h1 class="site-title">
+      Հայաստանի ջրային ատլաս
+    </h1>
+
+    <p class="site-subtitle">
+      Հայաստանի գետերի, լճերի, ջրվեժների և այլ
+      ջրային օբյեկտների տեղեկատվական ատլաս
+    </p>
+
+  </div>
+
 </header>
 
-<main>
 
-  <h2>Քարտեզ</h2>
+<main class="atlas-layout">
 
-  <div id="map"></div>
+  <!-- LEFT SIDEBAR -->
 
-  <p id="status">
-    Բեռնվում են տվյալները...
-  </p>
+  <aside class="sidebar">
 
-  <h2>Ջրային օբյեկտներ</h2>
+    <h2>Ջրային օբյեկտներ</h2>
 
-  <ul id="objects"></ul>
+
+    <!-- SEARCH -->
+
+    <div class="search-box">
+
+      <label for="search">
+        Որոնում
+      </label>
+
+      <input
+        type="search"
+        id="search"
+        placeholder="Օրինակ՝ Շաքի"
+        autocomplete="off"
+      >
+
+    </div>
+
+
+    <!-- FILTERS -->
+
+    <div class="filter-section">
+
+      <div class="filter-title">
+        Տեսակ
+      </div>
+
+      <div class="filter-list">
+
+        <label class="filter-option">
+          <input
+            class="type-filter"
+            type="checkbox"
+            value="river"
+            checked
+          >
+          Գետեր
+        </label>
+
+
+        <label class="filter-option">
+          <input
+            class="type-filter"
+            type="checkbox"
+            value="waterfall"
+            checked
+          >
+          Ջրվեժներ
+        </label>
+
+
+        <label class="filter-option">
+          <input
+            class="type-filter"
+            type="checkbox"
+            value="lake"
+            checked
+          >
+          Լճեր
+        </label>
+
+
+        <label class="filter-option">
+          <input
+            class="type-filter"
+            type="checkbox"
+            value="reservoir"
+            checked
+          >
+          Ջրամբարներ
+        </label>
+
+
+        <label class="filter-option">
+          <input
+            class="type-filter"
+            type="checkbox"
+            value="canal"
+            checked
+          >
+          Ջրանցքներ
+        </label>
+
+
+        <label class="filter-option">
+          <input
+            class="type-filter"
+            type="checkbox"
+            value="spring"
+            checked
+          >
+          Աղբյուրներ
+        </label>
+
+
+        <label class="filter-option">
+          <input
+            class="type-filter"
+            type="checkbox"
+            value="wetland"
+            checked
+          >
+          Խոնավ տարածքներ
+        </label>
+
+      </div>
+
+    </div>
+
+
+    <!-- STATUS -->
+
+    <div
+      id="status"
+      class="status-box"
+    >
+      Բեռնվում են տվյալները...
+    </div>
+
+
+    <!-- OBJECT LIST -->
+
+    <div class="object-list">
+
+      <h3>
+        Օբյեկտների ցանկ
+      </h3>
+
+      <ul
+        id="object-items"
+        class="object-items"
+      ></ul>
+
+    </div>
+
+  </aside>
+
+
+  <!-- MAP -->
+
+  <section class="map-panel">
+
+    <div class="map-card">
+
+      <div class="map-toolbar">
+
+        <h2>
+          Քարտեզ
+        </h2>
+
+        <span
+          id="map-count"
+          class="map-count"
+        >
+          Քարտեզագրված՝ 0
+        </span>
+
+      </div>
+
+      <div id="map"></div>
+
+    </div>
+
+  </section>
 
 </main>
 
-<footer>
-  Հայաստանի ջրային ատլաս — փորձնական տարբերակ
+
+<footer class="site-footer">
+
+  Հայաստանի ջրային ատլաս —
+  փորձնական տարբերակ
+
 </footer>
 
 
+<!-- Leaflet -->
+
 <script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-</script>
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
 
 
-<script>
+<!-- Atlas application -->
 
-  /* --------------------------------
-     SUPABASE
-  -------------------------------- */
-
-  const SUPABASE_URL =
-    'https://ignkzfqrLgkhboqhhxew.supabase.co';
-
-  const SUPABASE_KEY =
-    'sb_publishable_3TdwbfrdPzxjKfPIUg---w_pYyntp1o';
-
-
-  /* --------------------------------
-     MAP
-  -------------------------------- */
-
-  const map = L.map('map').setView(
-    [40.20, 44.80],
-    8
-  );
-
-  L.tileLayer(
-    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {
-      maxZoom: 19,
-      attribution:
-        '&copy; OpenStreetMap contributors'
-    }
-  ).addTo(map);
-
-
-  /* --------------------------------
-     LOAD DATA
-  -------------------------------- */
-
-  async function loadObjects() {
-
-    const url =
-      `${SUPABASE_URL}/rest/v1/water_objects` +
-      `?select=id,type,name_hy,latitude,longitude,elevation_m,height_m,height_min_m,height_max_m` +
-      `&order=name_hy.asc`;
-
-    try {
-
-      const response = await fetch(
-        url,
-        {
-          headers: {
-            apikey: SUPABASE_KEY
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `HTTP ${response.status}`
-        );
-      }
-
-      const data = await response.json();
-
-      showList(data);
-      showMarkers(data);
-
-      document.getElementById(
-        'status'
-      ).textContent =
-        `Բազայից ստացվել է ${data.length} ջրային օբյեկտ։`;
-
-    }
-
-    catch (error) {
-
-      document.getElementById(
-        'status'
-      ).textContent =
-        `Տվյալների ստացման սխալ՝ ${error.message}`;
-
-    }
-
-  }
-
-
-  /* --------------------------------
-     OBJECT LIST
-  -------------------------------- */
-
-  function showList(data) {
-
-    const list =
-      document.getElementById('objects');
-
-    list.innerHTML = '';
-
-    data.forEach(item => {
-
-      const li =
-        document.createElement('li');
-
-      const name =
-        document.createElement('strong');
-
-      name.textContent =
-        item.name_hy || 'Անանուն օբյեկտ';
-
-      li.appendChild(name);
-
-      const type =
-        document.createElement('span');
-
-      type.className =
-        'object-type';
-
-      type.textContent =
-        ` — ${item.type}`;
-
-      li.appendChild(type);
-
-      list.appendChild(li);
-
-    });
-
-  }
-
-
-  /* --------------------------------
-     MAP MARKERS
-  -------------------------------- */
-
-  function showMarkers(data) {
-
-    const mappedObjects =
-      data.filter(
-        item =>
-          item.latitude !== null &&
-          item.longitude !== null
-      );
-
-    mappedObjects.forEach(item => {
-
-      const marker =
-        L.marker(
-          [
-            item.latitude,
-            item.longitude
-          ]
-        ).addTo(map);
-
-
-      let popup =
-        `<strong>${item.name_hy}</strong>`;
-
-
-      if (item.height_m !== null) {
-
-        popup +=
-          `<br>Բարձրություն՝ ${item.height_m} մ`;
-
-      }
-
-      else if (
-        item.height_min_m !== null &&
-        item.height_max_m !== null
-      ) {
-
-        popup +=
-          `<br>Բարձրություն՝ ` +
-          `${item.height_min_m}–${item.height_max_m} մ`;
-
-      }
-
-
-      if (item.elevation_m !== null) {
-
-        popup +=
-          `<br>Բարձրությունը ծովի մակարդակից՝ ` +
-          `${item.elevation_m} մ`;
-
-      }
-
-
-      marker.bindPopup(popup);
-
-    });
-
-
-    /*
-      Եթե քարտեզագրված օբյեկտներ կան,
-      քարտեզը ավտոմատ ընդգրկում է բոլորը։
-    */
-
-    if (mappedObjects.length > 0) {
-
-      const bounds =
-        mappedObjects.map(
-          item => [
-            item.latitude,
-            item.longitude
-          ]
-        );
-
-      map.fitBounds(
-        bounds,
-        {
-          padding: [30, 30]
-        }
-      );
-
-    }
-
-  }
-
-
-  loadObjects();
-
-</script>
+<script src="app.js"></script>
 
 </body>
+
 </html>
