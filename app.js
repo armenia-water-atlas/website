@@ -102,6 +102,14 @@ function clearMarkers() {
 }
 
 
+function closeAllTooltips() {
+
+  markers.forEach(marker => {
+    marker.closeTooltip();
+  });
+}
+
+
 function formatScope(scope) {
 
   if (!scope) {
@@ -293,6 +301,9 @@ function focusObjectOnMap(
   }
 
 
+  closeAllTooltips();
+
+
   map.setView(
     [
       item.latitude,
@@ -300,29 +311,14 @@ function focusObjectOnMap(
     ],
     zoom
   );
-
-
-  const marker =
-    markers.find(
-      marker =>
-        Number(
-          marker.waterObjectId
-        ) ===
-        Number(item.id)
-    );
-
-
-  if (marker) {
-    marker.openPopup();
-  }
 }
 
 
 /* =========================================
-   MAP POPUPS
+   MAP HOVER INFO
    ========================================= */
 
-function buildPopup(item) {
+function buildHoverInfo(item) {
 
   let html =
     `<div class="popup-title">` +
@@ -428,8 +424,22 @@ function renderMarkers(data) {
       ]).addTo(map);
 
 
-    marker.bindPopup(
-      buildPopup(item)
+    /*
+      Փոքր տեղեկատու վահանակը
+      բացվում է կուրսորը ցուցիչի
+      վրա պահելիս, ոչ թե սեղմելիս։
+    */
+
+    marker.bindTooltip(
+      buildHoverInfo(item),
+      {
+        direction: 'top',
+        offset: [0, -28],
+        opacity: 1,
+        sticky: false,
+        interactive: false,
+        className: 'object-hover-tooltip'
+      }
     );
 
 
@@ -437,13 +447,28 @@ function renderMarkers(data) {
       item.id;
 
 
+    /*
+      Սեղմելիս փոքր վահանակը
+      փակում ենք և բացում ենք
+      ամբողջական տեղեկատվական քարտը։
+    */
+
     marker.on(
       'click',
       () => {
 
+        marker.closeTooltip();
+
+
         openObjectDetails(
           item,
           true
+        );
+
+
+        focusObjectOnMap(
+          item,
+          13
         );
       }
     );
@@ -554,6 +579,9 @@ function renderList(data) {
       'click',
       () => {
 
+        closeAllTooltips();
+
+
         openObjectDetails(
           item,
           true
@@ -583,6 +611,9 @@ async function openObjectDetails(
   item,
   updateUrl = true
 ) {
+
+  closeAllTooltips();
+
 
   if (updateUrl) {
 
@@ -799,6 +830,9 @@ function closeObjectDetails(
   updateUrl = true
 ) {
 
+  closeAllTooltips();
+
+
   const panel =
     document.getElementById(
       'object-details'
@@ -815,9 +849,6 @@ function closeObjectDetails(
       false
     );
   }
-
-
-  map.closePopup();
 
 
   map.setView(
@@ -1061,10 +1092,6 @@ async function loadObjectPhotos(
     photoBox.innerHTML = '';
 
 
-    /*
-      Մեծ լուսանկարի հատված
-    */
-
     const mainArea =
       document.createElement('div');
 
@@ -1077,11 +1104,6 @@ async function loadObjectPhotos(
       mainArea
     );
 
-
-    /*
-      Եթե կա մեկից ավելի լուսանկար,
-      ստեղծում ենք thumbnails։
-    */
 
     let thumbnails = null;
 
@@ -1224,11 +1246,6 @@ async function loadObjectPhotos(
       );
     }
 
-
-    /*
-      Սկզբում ցուցադրում ենք
-      առաջին՝ primary լուսանկարը։
-    */
 
     showGalleryPhoto(
       photos,
