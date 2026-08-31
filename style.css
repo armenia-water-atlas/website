@@ -1,0 +1,293 @@
+:root {
+  --bg: #f4f7f8;
+  --panel: #ffffff;
+  --border: #d9e1e5;
+  --text: #1f2933;
+  --muted: #667581;
+  --accent: #0f6f8f;
+  --accent-soft: #e8f4f8;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --radius: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  overflow-x: hidden;
+}
+
+.site-header {
+  padding: 18px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-header-inner {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+.site-title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.site-subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.atlas-layout {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 18px;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.sidebar {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  align-self: start;
+}
+
+.sidebar h2 {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+
+.search-box {
+  margin-bottom: 18px;
+}
+
+.search-box label {
+  display: block;
+  margin-bottom: 7px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 15px;
+  outline: none;
+}
+
+.search-box input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(15, 111, 143, 0.12);
+}
+
+.filter-section {
+  margin-top: 18px;
+}
+
+.filter-title {
+  margin-bottom: 9px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.filter-list {
+  display: grid;
+  gap: 8px;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.filter-option input {
+  width: 17px;
+  height: 17px;
+}
+
+.status-box {
+  margin-top: 18px;
+  padding: 11px 12px;
+  background: var(--accent-soft);
+  border-radius: 9px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.object-list {
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.object-list h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.object-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.object-item {
+  padding: 9px 6px;
+  border-bottom: 1px solid #edf1f3;
+  cursor: pointer;
+}
+
+.object-item:hover {
+  background: #f7fafb;
+}
+
+.object-name {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.object-meta {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.map-panel {
+  min-width: 0;
+}
+
+.map-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.map-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.map-toolbar h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.map-count {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#map {
+  width: 100%;
+  height: calc(100vh - 170px);
+  min-height: 560px;
+  background: #dfe7ea;
+}
+
+.leaflet-popup-content {
+  line-height: 1.45;
+}
+
+.popup-title {
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 5px;
+}
+
+.popup-row {
+  margin-top: 3px;
+}
+
+.site-footer {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 18px 22px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .atlas-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    order: 2;
+  }
+
+  .map-panel {
+    order: 1;
+  }
+
+  #map {
+    height: 65vh;
+    min-height: 430px;
+  }
+
+  .object-items {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 600px) {
+  .site-header {
+    padding: 15px 16px;
+  }
+
+  .site-title {
+    font-size: 23px;
+  }
+
+  .site-subtitle {
+    font-size: 13px;
+  }
+
+  .atlas-layout {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .sidebar {
+    padding: 14px;
+  }
+
+  .map-toolbar {
+    padding: 11px 12px;
+  }
+
+  #map {
+    min-height: 390px;
+  }
+}
