@@ -618,3 +618,76 @@ body {
   }
 
 }
+/* =========================================
+   PHOTO DISPLAY REFINEMENT
+   ========================================= */
+
+.details-photo {
+  min-height: 0;
+  background: #eef3f5;
+}
+
+.details-photo-placeholder {
+  min-height: 0;
+  display: block;
+  background: #eef3f5;
+}
+
+.details-photo-placeholder img {
+  width: 100%;
+  height: 400px;
+  max-height: none;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.photo-credit {
+  width: 100%;
+  padding: 9px 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+
+  background: #f5f8f9;
+  border-top: 1px solid var(--border);
+
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.photo-credit span {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.photo-credit a {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.photo-credit a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+
+  .details-photo-placeholder img {
+    height: 260px;
+  }
+
+  .photo-credit {
+    justify-content: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+    text-align: left;
+  }
+
+}
