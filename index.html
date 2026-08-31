@@ -5,6 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Հայաստանի ջրային ատլաս</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.6;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    #status {
+      margin: 20px 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+  </style>
 </head>
 
 <body>
@@ -12,15 +34,69 @@
   <h1>Հայաստանի ջրային ատլաս</h1>
 
   <p>
-    Հայաստանի գետերի, լճերի, ջրվեժների և այլ ջրային օբյեկտների
-    տեղեկատվական ատլաս։
+    Հայաստանի ջրային օբյեկտների տեղեկատվական ատլաս
   </p>
 
-  <h2>Փորձնական տարբերակ</h2>
+  <h2>Բազայի փորձնական տվյալներ</h2>
 
-  <p id="status">
-    Կայքը հաջողությամբ աշխատում է։
-  </p>
+  <p id="status">Բեռնվում են տվյալները...</p>
+
+  <ul id="objects"></ul>
+
+  <script>
+    const SUPABASE_URL =
+      'https://ignkzfqrLgkhboqhhxew.supabase.co';
+
+    const SUPABASE_KEY =
+      'ԱՅՍՏԵՂ_ՏԵՂԱԴՐԵՔ_PUBLISHABLE_KEY';
+
+    async function loadObjects() {
+
+      const url =
+        `${SUPABASE_URL}/rest/v1/water_objects` +
+        `?select=id,type,name_hy&order=id.asc&limit=20`;
+
+      try {
+
+        const response = await fetch(url, {
+          headers: {
+            apikey: SUPABASE_KEY
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        const list = document.getElementById('objects');
+        const status = document.getElementById('status');
+
+        list.innerHTML = '';
+
+        data.forEach(item => {
+          const li = document.createElement('li');
+
+          li.textContent =
+            `${item.name_hy} — ${item.type}`;
+
+          list.appendChild(li);
+        });
+
+        status.textContent =
+          `Բազայից ստացվել է ${data.length} օբյեկտ։`;
+
+      } catch (error) {
+
+        document.getElementById('status').textContent =
+          `Տվյալների ստացման սխալ՝ ${error.message}`;
+
+      }
+    }
+
+    loadObjects();
+  </script>
 
 </body>
 </html>
