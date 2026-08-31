@@ -181,6 +181,200 @@ function addDetailField(
 
 
 /* =========================================
+   URL / HISTORY
+   ========================================= */
+
+function getObjectIdFromUrl() {
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+
+  const value =
+    params.get('id');
+
+
+  if (!value) {
+    return null;
+  }
+
+
+  const id =
+    Number(value);
+
+
+  if (
+    !Number.isInteger(id) ||
+    id <= 0
+  ) {
+    return null;
+  }
+
+
+  return id;
+}
+
+
+function setObjectUrl(
+  objectId,
+  replace = false
+) {
+
+  const url =
+    new URL(
+      window.location.href
+    );
+
+
+  if (objectId) {
+
+    url.searchParams.set(
+      'id',
+      objectId
+    );
+
+  } else {
+
+    url.searchParams.delete(
+      'id'
+    );
+  }
+
+
+  const state = {
+    objectId:
+      objectId || null
+  };
+
+
+  if (replace) {
+
+    window.history.replaceState(
+      state,
+      '',
+      url
+    );
+
+  } else {
+
+    window.history.pushState(
+      state,
+      '',
+      url
+    );
+  }
+}
+
+
+function findObjectById(
+  objectId
+) {
+
+  return allObjects.find(
+    item =>
+      Number(item.id) ===
+      Number(objectId)
+  );
+}
+
+
+function focusObjectOnMap(
+  item,
+  zoom = 13
+) {
+
+  if (
+    item.latitude === null ||
+    item.longitude === null
+  ) {
+    return;
+  }
+
+
+  map.setView(
+    [
+      item.latitude,
+      item.longitude
+    ],
+    zoom
+  );
+
+
+  const marker =
+    markers.find(
+      marker =>
+        Number(
+          marker.waterObjectId
+        ) ===
+        Number(item.id)
+    );
+
+
+  if (marker) {
+
+    marker.openPopup();
+  }
+}
+
+
+async function openObjectFromUrl() {
+
+  const objectId =
+    getObjectIdFromUrl();
+
+
+  if (!objectId) {
+
+    closeObjectDetails(
+      false
+    );
+
+    map.setView(
+      ARMENIA_CENTER,
+      ARMENIA_ZOOM
+    );
+
+    return;
+  }
+
+
+  const item =
+    findObjectById(
+      objectId
+    );
+
+
+  if (!item) {
+
+    closeObjectDetails(
+      false
+    );
+
+    map.setView(
+      ARMENIA_CENTER,
+      ARMENIA_ZOOM
+    );
+
+    return;
+  }
+
+
+  focusObjectOnMap(
+    item,
+    13
+  );
+
+
+  await openObjectDetails(
+    item,
+    false
+  );
+}
+
+
+/* =========================================
    MAP POPUPS
    ========================================= */
 
@@ -302,7 +496,11 @@ function renderMarkers(data) {
     marker.on(
       'click',
       () => {
-        openObjectDetails(item);
+
+        openObjectDetails(
+          item,
+          true
+        );
       }
     );
 
@@ -312,16 +510,23 @@ function renderMarkers(data) {
 
 
   document
-    .getElementById('map-count')
+    .getElementById(
+      'map-count'
+    )
     .textContent =
       `Քարտեզագրված՝ ${mapped.length}`;
 
 
   /*
-    Atlas-ի հիմնական տեսք.
-    ամբողջ Հայաստանը պահում ենք
-    կենտրոնում՝ zoom 7.5-ով։
+    Եթե բացված է կոնկրետ օբյեկտի URL,
+    renderMarkers-ը քարտեզը չի վերադարձնում
+    Հայաստանի ընդհանուր տեսքին։
   */
+
+  if (getObjectIdFromUrl()) {
+    return;
+  }
+
 
   if (
     data.length ===
@@ -337,12 +542,6 @@ function renderMarkers(data) {
   }
 
 
-  /*
-    Եթե որոնման կամ ֆիլտրի
-    արդյունքում մնում է մեկ
-    քարտեզագրված օբյեկտ։
-  */
-
   if (mapped.length === 1) {
 
     map.setView(
@@ -356,12 +555,6 @@ function renderMarkers(data) {
     return;
   }
 
-
-  /*
-    Եթե որոնման կամ ֆիլտրի
-    արդյունքում կան մի քանի
-    քարտեզագրված օբյեկտներ։
-  */
 
   if (mapped.length > 1) {
 
@@ -424,36 +617,15 @@ function renderList(data) {
       () => {
 
         openObjectDetails(
-          item
+          item,
+          true
         );
 
 
-        if (
-          item.latitude !== null &&
-          item.longitude !== null
-        ) {
-
-          map.setView(
-            [
-              item.latitude,
-              item.longitude
-            ],
-            13
-          );
-
-
-          const marker =
-            markers.find(
-              marker =>
-                marker.waterObjectId ===
-                item.id
-            );
-
-
-          if (marker) {
-            marker.openPopup();
-          }
-        }
+        focusObjectOnMap(
+          item,
+          13
+        );
       }
     );
 
@@ -469,7 +641,29 @@ function renderList(data) {
    OBJECT DETAILS
    ========================================= */
 
-async function openObjectDetails(item) {
+async function openObjectDetails(
+  item,
+  updateUrl = true
+) {
+
+  if (updateUrl) {
+
+    const currentId =
+      getObjectIdFromUrl();
+
+
+    if (
+      Number(currentId) !==
+      Number(item.id)
+    ) {
+
+      setObjectUrl(
+        item.id,
+        false
+      );
+    }
+  }
+
 
   const panel =
     document.getElementById(
@@ -660,6 +854,38 @@ async function openObjectDetails(item) {
     loadObjectSources(item.id),
     loadObjectPhotos(item.id)
   ]);
+}
+
+
+function closeObjectDetails(
+  updateUrl = true
+) {
+
+  const panel =
+    document.getElementById(
+      'object-details'
+    );
+
+
+  panel.hidden = true;
+
+
+  if (updateUrl) {
+
+    setObjectUrl(
+      null,
+      false
+    );
+  }
+
+
+  map.closePopup();
+
+
+  map.setView(
+    ARMENIA_CENTER,
+    ARMENIA_ZOOM
+  );
 }
 
 
@@ -1259,6 +1485,54 @@ async function loadObjects() {
         `Բազայից ստացվել է ${allObjects.length} ջրային օբյեկտ։`;
 
 
+    /*
+      Սկզբնական էջի History state։
+    */
+
+    const initialId =
+      getObjectIdFromUrl();
+
+
+    window.history.replaceState(
+      {
+        objectId:
+          initialId || null
+      },
+      '',
+      window.location.href
+    );
+
+
+    /*
+      Եթե էջը բացվել է ?id=...
+      հղումով, անմիջապես բացում ենք
+      համապատասխան օբյեկտը։
+    */
+
+    if (initialId) {
+
+      const item =
+        findObjectById(
+          initialId
+        );
+
+
+      if (item) {
+
+        focusObjectOnMap(
+          item,
+          13
+        );
+
+
+        await openObjectDetails(
+          item,
+          false
+        );
+      }
+    }
+
+
   } catch (error) {
 
     document
@@ -1306,13 +1580,58 @@ document
     'click',
     () => {
 
-      document
-        .getElementById(
-          'object-details'
-        )
-        .hidden = true;
+      closeObjectDetails(
+        true
+      );
     }
   );
+
+
+/*
+  Browser Back / Forward
+*/
+
+window.addEventListener(
+  'popstate',
+  async () => {
+
+    const objectId =
+      getObjectIdFromUrl();
+
+
+    if (!objectId) {
+
+      closeObjectDetails(
+        false
+      );
+
+      return;
+    }
+
+
+    const item =
+      findObjectById(
+        objectId
+      );
+
+
+    if (!item) {
+      return;
+    }
+
+
+    focusObjectOnMap(
+      item,
+      13
+    );
+
+
+    await openObjectDetails(
+      item,
+      false
+    );
+  }
+);
 
 
 /* =========================================
