@@ -527,6 +527,158 @@ async function openObjectDetails(item) {
   );
 }
 
+/* =========================================
+   PHOTOS
+   ========================================= */
+
+async function loadObjectPhotos(objectId) {
+
+  const photoBox =
+    document.getElementById(
+      'details-photo-placeholder'
+    );
+
+  if (!photoBox) {
+    return;
+  }
+
+  photoBox.innerHTML = `
+    <span>Լուսանկար</span>
+    <small>Բեռնվում է...</small>
+  `;
+
+  const url =
+    `${SUPABASE_URL}/rest/v1/object_photos` +
+    `?object_id=eq.${objectId}` +
+    `&select=id,photo_url,thumbnail_url,caption_hy,author,source_url,license,is_primary,sort_order` +
+    `&order=is_primary.desc,sort_order.asc`;
+
+  try {
+
+    const response =
+      await fetch(
+        url,
+        {
+          headers: {
+            apikey: SUPABASE_KEY
+          }
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const photos =
+      await response.json();
+
+    if (photos.length === 0) {
+
+      photoBox.innerHTML = `
+        <span>Լուսանկար չկա</span>
+        <small>
+          Այս օբյեկտի համար լուսանկար դեռ ավելացված չէ
+        </small>
+      `;
+
+      return;
+    }
+
+    const photo = photos[0];
+
+    photoBox.innerHTML = '';
+
+    const image =
+      document.createElement('img');
+
+    image.src = photo.photo_url;
+
+    image.alt =
+      photo.caption_hy ||
+      'Ջրային օբյեկտի լուսանկար';
+
+    image.loading = 'lazy';
+
+    image.style.width = '100%';
+    image.style.height = '100%';
+    image.style.maxHeight = '560px';
+    image.style.objectFit = 'cover';
+    image.style.display = 'block';
+
+    photoBox.appendChild(image);
+
+
+    const credit =
+      document.createElement('div');
+
+    credit.className =
+      'photo-credit';
+
+
+    const parts = [];
+
+    if (photo.author) {
+      parts.push(
+        `Լուսանկար՝ ${photo.author}`
+      );
+    }
+
+    if (photo.license) {
+      parts.push(
+        photo.license
+      );
+    }
+
+
+    const creditText =
+      document.createElement('span');
+
+    creditText.textContent =
+      parts.join(' · ');
+
+    credit.appendChild(
+      creditText
+    );
+
+
+    if (photo.source_url) {
+
+      const sourceLink =
+        document.createElement('a');
+
+      sourceLink.href =
+        photo.source_url;
+
+      sourceLink.target =
+        '_blank';
+
+      sourceLink.rel =
+        'noopener noreferrer';
+
+      sourceLink.textContent =
+        'Աղբյուր';
+
+      credit.appendChild(
+        sourceLink
+      );
+    }
+
+
+    photoBox.appendChild(
+      credit
+    );
+
+
+  } catch (error) {
+
+    photoBox.innerHTML = `
+      <span>Լուսանկարը չբեռնվեց</span>
+      <small>${error.message}</small>
+    `;
+  }
+}
 
 /* =========================================
    SOURCES
