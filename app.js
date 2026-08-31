@@ -251,9 +251,9 @@ if (mapped.length > 0) {
   if (data.length === allObjects.length) {
 
     const armeniaBounds = [
-      [38.84, 43.44],  // հարավ-արևմուտք
-      [41.30, 46.63]   // հյուսիս-արևելք
-    ];
+  [38.82, 43.95],
+  [41.32, 46.20]
+];
 
     map.fitBounds(
       armeniaBounds,
