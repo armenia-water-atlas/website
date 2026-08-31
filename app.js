@@ -35,14 +35,20 @@ const DATA_SCOPE_LABELS = {
    ========================================= */
 
 const ARMENIA_CENTER = [
-  40.05,
+  40.10,
   45.05
 ];
 
-const ARMENIA_ZOOM = 8;
+const ARMENIA_ZOOM = 7.5;
 
 
-const map = L.map('map').setView(
+const map = L.map(
+  'map',
+  {
+    zoomSnap: 0.25,
+    zoomDelta: 0.5
+  }
+).setView(
   ARMENIA_CENTER,
   ARMENIA_ZOOM
 );
@@ -312,9 +318,9 @@ function renderMarkers(data) {
 
 
   /*
-    Եթե ցուցադրվում է ամբողջ բազան,
-    Հայաստանը պահում ենք ֆիքսված
-    հիմնական տեսքով։
+    Atlas-ի հիմնական տեսք.
+    ամբողջ Հայաստանը պահում ենք
+    կենտրոնում՝ zoom 7.5-ով։
   */
 
   if (
@@ -332,9 +338,9 @@ function renderMarkers(data) {
 
 
   /*
-    Որոնման կամ ֆիլտրի դեպքում
-    մոտենում ենք գտնված
-    քարտեզագրված օբյեկտներին։
+    Եթե որոնման կամ ֆիլտրի
+    արդյունքում մնում է մեկ
+    քարտեզագրված օբյեկտ։
   */
 
   if (mapped.length === 1) {
@@ -350,6 +356,12 @@ function renderMarkers(data) {
     return;
   }
 
+
+  /*
+    Եթե որոնման կամ ֆիլտրի
+    արդյունքում կան մի քանի
+    քարտեզագրված օբյեկտներ։
+  */
 
   if (mapped.length > 1) {
 
