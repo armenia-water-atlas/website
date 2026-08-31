@@ -522,9 +522,10 @@ async function openObjectDetails(item) {
   });
 
 
-  await loadObjectSources(
-    item.id
-  );
+    await Promise.all([
+    loadObjectSources(item.id),
+    loadObjectPhotos(item.id)
+  ]);
 }
 
 /* =========================================
