@@ -1,4 +1,3 @@
-```
 const SUPABASE_URL =
   'https://ignkzfqrlgkhboqhhxew.supabase.co';
 
@@ -26,7 +25,6 @@ const DATA_SCOPE_LABELS = {
   legal_status: 'իրավական կարգավիճակ',
   general: 'ընդհանուր տվյալներ',
   coordinates: 'կոորդինատներ',
-  geometry: 'քարտեզային երկրաչափություն',
   height: 'բարձրություն',
   elevation: 'բարձրությունը ծովի մակարդակից'
 };
@@ -300,53 +298,10 @@ function findObjectById(
 }
 
 
-function getObjectMapLayer(item) {
-
-  return markers.find(
-    layer =>
-      Number(layer.waterObjectId) ===
-      Number(item.id)
-  );
-}
-
-
 function focusObjectOnMap(
   item,
   zoom = 13
 ) {
-
-  closeAllTooltips();
-
-  const layer =
-    getObjectMapLayer(item);
-
-
-  if (
-    layer &&
-    typeof layer.getBounds === 'function'
-  ) {
-
-    const bounds =
-      layer.getBounds();
-
-
-    if (
-      bounds &&
-      bounds.isValid()
-    ) {
-
-      map.fitBounds(
-        bounds,
-        {
-          padding: [35, 35],
-          maxZoom: 11
-        }
-      );
-
-      return;
-    }
-  }
-
 
   if (
     item.latitude === null ||
@@ -354,6 +309,9 @@ function focusObjectOnMap(
   ) {
     return;
   }
+
+
+  closeAllTooltips();
 
 
   map.setView(
@@ -462,64 +420,31 @@ function renderMarkers(data) {
 
   const mapped =
     data.filter(item =>
-      item.geometry !== null ||
-      (
-        item.latitude !== null &&
-        item.longitude !== null
-      )
+      item.latitude !== null &&
+      item.longitude !== null
     );
 
 
   mapped.forEach(item => {
 
-    let layer = null;
+    const marker =
+      L.marker([
+        item.latitude,
+        item.longitude
+      ]).addTo(map);
 
 
-    if (item.geometry) {
+    /*
+      Կարևոր տարբերությունը այստեղ է.
 
-      try {
+      direction: 'auto'
 
-        layer =
-          L.geoJSON(
-            item.geometry,
-            {
-              style: {
-                weight: 4,
-                opacity: 0.9
-              }
-            }
-          ).addTo(map);
+      Leaflet-ը ինքն է որոշում՝
+      վահանակը որ կողմում բացել,
+      որպեսզի քարտեզից դուրս չգա։
+    */
 
-      } catch (error) {
-
-        console.error(
-          `Geometry error for object ${item.id}:`,
-          error
-        );
-      }
-    }
-
-
-    if (
-      !layer &&
-      item.latitude !== null &&
-      item.longitude !== null
-    ) {
-
-      layer =
-        L.marker([
-          item.latitude,
-          item.longitude
-        ]).addTo(map);
-    }
-
-
-    if (!layer) {
-      return;
-    }
-
-
-    layer.bindTooltip(
+    marker.bindTooltip(
       buildHoverInfo(item),
       {
         direction: 'auto',
@@ -533,15 +458,15 @@ function renderMarkers(data) {
     );
 
 
-    layer.waterObjectId =
+    marker.waterObjectId =
       item.id;
 
 
-    layer.on(
+    marker.on(
       'click',
       () => {
 
-        layer.closeTooltip();
+        marker.closeTooltip();
 
 
         openObjectDetails(
@@ -558,7 +483,7 @@ function renderMarkers(data) {
     );
 
 
-    markers.push(layer);
+    markers.push(marker);
   });
 
 
@@ -591,8 +516,11 @@ function renderMarkers(data) {
 
   if (mapped.length === 1) {
 
-    focusObjectOnMap(
-      mapped[0],
+    map.setView(
+      [
+        mapped[0].latitude,
+        mapped[0].longitude
+      ],
       13
     );
 
@@ -602,26 +530,20 @@ function renderMarkers(data) {
 
   if (mapped.length > 1) {
 
-    const group =
-      L.featureGroup(
-        markers
-      );
-
-
     const bounds =
-      group.getBounds();
+      mapped.map(item => [
+        item.latitude,
+        item.longitude
+      ]);
 
 
-    if (bounds.isValid()) {
-
-      map.fitBounds(
-        bounds,
-        {
-          padding: [30, 30],
-          maxZoom: 10
-        }
-      );
-    }
+    map.fitBounds(
+      bounds,
+      {
+        padding: [30, 30],
+        maxZoom: 10
+      }
+    );
   }
 }
 
@@ -1674,7 +1596,7 @@ async function loadObjects() {
 
   const url =
     `${SUPABASE_URL}/rest/v1/water_objects` +
-    `?select=id,type,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m,geometry` +
+    `?select=id,type,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m` +
     `&order=name_hy.asc`;
 
 
@@ -1862,4 +1784,3 @@ window.addEventListener(
    ========================================= */
 
 loadObjects();
-```
