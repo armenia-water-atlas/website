@@ -313,64 +313,8 @@ function focusObjectOnMap(
 
 
   if (marker) {
-
     marker.openPopup();
   }
-}
-
-
-async function openObjectFromUrl() {
-
-  const objectId =
-    getObjectIdFromUrl();
-
-
-  if (!objectId) {
-
-    closeObjectDetails(
-      false
-    );
-
-    map.setView(
-      ARMENIA_CENTER,
-      ARMENIA_ZOOM
-    );
-
-    return;
-  }
-
-
-  const item =
-    findObjectById(
-      objectId
-    );
-
-
-  if (!item) {
-
-    closeObjectDetails(
-      false
-    );
-
-    map.setView(
-      ARMENIA_CENTER,
-      ARMENIA_ZOOM
-    );
-
-    return;
-  }
-
-
-  focusObjectOnMap(
-    item,
-    13
-  );
-
-
-  await openObjectDetails(
-    item,
-    false
-  );
 }
 
 
@@ -516,12 +460,6 @@ function renderMarkers(data) {
     .textContent =
       `Քարտեզագրված՝ ${mapped.length}`;
 
-
-  /*
-    Եթե բացված է կոնկրետ օբյեկտի URL,
-    renderMarkers-ը քարտեզը չի վերադարձնում
-    Հայաստանի ընդհանուր տեսքին։
-  */
 
   if (getObjectIdFromUrl()) {
     return;
@@ -890,8 +828,168 @@ function closeObjectDetails(
 
 
 /* =========================================
-   PHOTOS
+   PHOTO GALLERY
    ========================================= */
+
+function showGalleryPhoto(
+  photos,
+  selectedIndex,
+  mainArea,
+  thumbnails
+) {
+
+  const photo =
+    photos[selectedIndex];
+
+
+  mainArea.innerHTML = '';
+
+
+  const image =
+    document.createElement('img');
+
+
+  image.src =
+    photo.photo_url;
+
+
+  image.alt =
+    photo.caption_hy ||
+    'Ջրային օբյեկտի լուսանկար';
+
+
+  image.loading =
+    'lazy';
+
+
+  image.style.width =
+    '100%';
+
+  image.style.height =
+    '400px';
+
+  image.style.objectFit =
+    'cover';
+
+  image.style.objectPosition =
+    'center';
+
+  image.style.display =
+    'block';
+
+
+  mainArea.appendChild(
+    image
+  );
+
+
+  const credit =
+    document.createElement('div');
+
+
+  credit.className =
+    'photo-credit';
+
+
+  const creditText =
+    document.createElement('span');
+
+
+  const parts = [];
+
+
+  if (photo.author) {
+
+    parts.push(
+      `Լուսանկար՝ ${photo.author}`
+    );
+  }
+
+
+  if (photo.license) {
+
+    parts.push(
+      photo.license
+    );
+  }
+
+
+  creditText.textContent =
+    parts.join(' · ');
+
+
+  credit.appendChild(
+    creditText
+  );
+
+
+  if (photo.source_url) {
+
+    const sourceLink =
+      document.createElement('a');
+
+
+    sourceLink.href =
+      photo.source_url;
+
+
+    sourceLink.target =
+      '_blank';
+
+
+    sourceLink.rel =
+      'noopener noreferrer';
+
+
+    sourceLink.textContent =
+      'Աղբյուր';
+
+
+    credit.appendChild(
+      sourceLink
+    );
+  }
+
+
+  mainArea.appendChild(
+    credit
+  );
+
+
+  if (thumbnails) {
+
+    const buttons =
+      thumbnails.querySelectorAll(
+        'button'
+      );
+
+
+    buttons.forEach(
+      (button, index) => {
+
+        if (
+          index === selectedIndex
+        ) {
+
+          button.style.border =
+            '3px solid #247c72';
+
+          button.style.opacity =
+            '1';
+
+        } else {
+
+          button.style.border =
+            '2px solid transparent';
+
+          button.style.opacity =
+            '0.72';
+        }
+      }
+    );
+  }
+}
+
 
 async function loadObjectPhotos(
   objectId
@@ -960,129 +1058,183 @@ async function loadObjectPhotos(
     }
 
 
-    const photo =
-      photos[0];
-
-
     photoBox.innerHTML = '';
 
 
-    const image =
-      document.createElement(
-        'img'
-      );
+    /*
+      Մեծ լուսանկարի հատված
+    */
+
+    const mainArea =
+      document.createElement('div');
 
 
-    image.src =
-      photo.photo_url;
-
-
-    image.alt =
-      photo.caption_hy ||
-      'Ջրային օբյեկտի լուսանկար';
-
-
-    image.loading =
-      'lazy';
-
-
-    image.style.width =
+    mainArea.style.width =
       '100%';
 
-    image.style.height =
-      '400px';
-
-    image.style.objectFit =
-      'cover';
-
-    image.style.objectPosition =
-      'center';
-
-    image.style.display =
-      'block';
-
 
     photoBox.appendChild(
-      image
+      mainArea
     );
 
 
-    const credit =
-      document.createElement(
-        'div'
+    /*
+      Եթե կա մեկից ավելի լուսանկար,
+      ստեղծում ենք thumbnails։
+    */
+
+    let thumbnails = null;
+
+
+    if (photos.length > 1) {
+
+      thumbnails =
+        document.createElement('div');
+
+
+      thumbnails.style.display =
+        'flex';
+
+      thumbnails.style.gap =
+        '10px';
+
+      thumbnails.style.padding =
+        '12px 14px';
+
+      thumbnails.style.overflowX =
+        'auto';
+
+      thumbnails.style.background =
+        '#f5f8f9';
+
+      thumbnails.style.borderTop =
+        '1px solid #d9e2e5';
+
+
+      photos.forEach(
+        (photo, index) => {
+
+          const button =
+            document.createElement(
+              'button'
+            );
+
+
+          button.type =
+            'button';
+
+
+          button.title =
+            photo.caption_hy ||
+            `Լուսանկար ${index + 1}`;
+
+
+          button.style.padding =
+            '0';
+
+          button.style.margin =
+            '0';
+
+          button.style.width =
+            '105px';
+
+          button.style.height =
+            '72px';
+
+          button.style.minWidth =
+            '105px';
+
+          button.style.borderRadius =
+            '7px';
+
+          button.style.overflow =
+            'hidden';
+
+          button.style.cursor =
+            'pointer';
+
+          button.style.background =
+            '#ffffff';
+
+          button.style.transition =
+            'opacity 0.15s ease, border 0.15s ease';
+
+
+          const thumb =
+            document.createElement(
+              'img'
+            );
+
+
+          thumb.src =
+            photo.thumbnail_url ||
+            photo.photo_url;
+
+
+          thumb.alt =
+            photo.caption_hy ||
+            `Լուսանկար ${index + 1}`;
+
+
+          thumb.loading =
+            'lazy';
+
+
+          thumb.style.width =
+            '100%';
+
+          thumb.style.height =
+            '100%';
+
+          thumb.style.objectFit =
+            'cover';
+
+          thumb.style.display =
+            'block';
+
+
+          button.appendChild(
+            thumb
+          );
+
+
+          button.addEventListener(
+            'click',
+            () => {
+
+              showGalleryPhoto(
+                photos,
+                index,
+                mainArea,
+                thumbnails
+              );
+            }
+          );
+
+
+          thumbnails.appendChild(
+            button
+          );
+        }
       );
 
 
-    credit.className =
-      'photo-credit';
-
-
-    const parts = [];
-
-
-    if (photo.author) {
-
-      parts.push(
-        `Լուսանկար՝ ${photo.author}`
+      photoBox.appendChild(
+        thumbnails
       );
     }
 
 
-    if (photo.license) {
+    /*
+      Սկզբում ցուցադրում ենք
+      առաջին՝ primary լուսանկարը։
+    */
 
-      parts.push(
-        photo.license
-      );
-    }
-
-
-    const creditText =
-      document.createElement(
-        'span'
-      );
-
-
-    creditText.textContent =
-      parts.join(' · ');
-
-
-    credit.appendChild(
-      creditText
-    );
-
-
-    if (photo.source_url) {
-
-      const sourceLink =
-        document.createElement(
-          'a'
-        );
-
-
-      sourceLink.href =
-        photo.source_url;
-
-
-      sourceLink.target =
-        '_blank';
-
-
-      sourceLink.rel =
-        'noopener noreferrer';
-
-
-      sourceLink.textContent =
-        'Աղբյուր';
-
-
-      credit.appendChild(
-        sourceLink
-      );
-    }
-
-
-    photoBox.appendChild(
-      credit
+    showGalleryPhoto(
+      photos,
+      0,
+      mainArea,
+      thumbnails
     );
 
 
@@ -1245,9 +1397,7 @@ async function loadObjectSources(
       const metaParts = [];
 
 
-      if (
-        source.organization
-      ) {
+      if (source.organization) {
 
         metaParts.push(
           source.organization
@@ -1255,9 +1405,7 @@ async function loadObjectSources(
       }
 
 
-      if (
-        source.publication_year
-      ) {
+      if (source.publication_year) {
 
         metaParts.push(
           source.publication_year
@@ -1279,9 +1427,7 @@ async function loadObjectSources(
       }
 
 
-      if (
-        metaParts.length > 0
-      ) {
+      if (metaParts.length > 0) {
 
         const meta =
           document.createElement(
@@ -1485,10 +1631,6 @@ async function loadObjects() {
         `Բազայից ստացվել է ${allObjects.length} ջրային օբյեկտ։`;
 
 
-    /*
-      Սկզբնական էջի History state։
-    */
-
     const initialId =
       getObjectIdFromUrl();
 
@@ -1502,12 +1644,6 @@ async function loadObjects() {
       window.location.href
     );
 
-
-    /*
-      Եթե էջը բացվել է ?id=...
-      հղումով, անմիջապես բացում ենք
-      համապատասխան օբյեկտը։
-    */
 
     if (initialId) {
 
@@ -1586,10 +1722,6 @@ document
     }
   );
 
-
-/*
-  Browser Back / Forward
-*/
 
 window.addEventListener(
   'popstate',
