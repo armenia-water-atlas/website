@@ -116,6 +116,7 @@ function formatScope(scope) {
     return '';
   }
 
+
   return scope
     .split(',')
     .map(part => {
@@ -123,10 +124,12 @@ function formatScope(scope) {
       const key =
         part.trim();
 
+
       return (
         DATA_SCOPE_LABELS[key] ||
         key
       );
+
     })
     .join(', ');
 }
@@ -150,6 +153,7 @@ function addDetailField(
   const field =
     document.createElement('div');
 
+
   field.className =
     'detail-field';
 
@@ -157,8 +161,10 @@ function addDetailField(
   const labelElement =
     document.createElement('span');
 
+
   labelElement.className =
     'detail-label';
+
 
   labelElement.textContent =
     label;
@@ -167,8 +173,10 @@ function addDetailField(
   const valueElement =
     document.createElement('span');
 
+
   valueElement.className =
     'detail-value';
+
 
   valueElement.textContent =
     value;
@@ -178,9 +186,11 @@ function addDetailField(
     labelElement
   );
 
+
   field.appendChild(
     valueElement
   );
+
 
   container.appendChild(
     field
@@ -425,20 +435,25 @@ function renderMarkers(data) {
 
 
     /*
-      Փոքր տեղեկատու վահանակը
-      բացվում է կուրսորը ցուցիչի
-      վրա պահելիս, ոչ թե սեղմելիս։
+      Կարևոր տարբերությունը այստեղ է.
+
+      direction: 'auto'
+
+      Leaflet-ը ինքն է որոշում՝
+      վահանակը որ կողմում բացել,
+      որպեսզի քարտեզից դուրս չգա։
     */
 
     marker.bindTooltip(
       buildHoverInfo(item),
       {
-        direction: 'top',
-        offset: [0, -28],
+        direction: 'auto',
+        offset: [0, 0],
         opacity: 1,
         sticky: false,
         interactive: false,
-        className: 'object-hover-tooltip'
+        className:
+          'object-hover-tooltip'
       }
     );
 
@@ -446,12 +461,6 @@ function renderMarkers(data) {
     marker.waterObjectId =
       item.id;
 
-
-    /*
-      Սեղմելիս փոքր վահանակը
-      փակում ենք և բացում ենք
-      ամբողջական տեղեկատվական քարտը։
-    */
 
     marker.on(
       'click',
@@ -826,6 +835,10 @@ async function openObjectDetails(
 }
 
 
+/* =========================================
+   CLOSE DETAILS
+   ========================================= */
+
 function closeObjectDetails(
   updateUrl = true
 ) {
@@ -963,14 +976,11 @@ function showGalleryPhoto(
     sourceLink.href =
       photo.source_url;
 
-
     sourceLink.target =
       '_blank';
 
-
     sourceLink.rel =
       'noopener noreferrer';
-
 
     sourceLink.textContent =
       'Աղբյուր';
@@ -1178,9 +1188,6 @@ async function loadObjectPhotos(
           button.style.background =
             '#ffffff';
 
-          button.style.transition =
-            'opacity 0.15s ease, border 0.15s ease';
-
 
           const thumb =
             document.createElement(
@@ -1382,9 +1389,7 @@ async function loadObjectSources(
 
 
       const item =
-        document.createElement(
-          'div'
-        );
+        document.createElement('div');
 
 
       item.className =
@@ -1392,9 +1397,7 @@ async function loadObjectSources(
 
 
       const title =
-        document.createElement(
-          'div'
-        );
+        document.createElement('div');
 
 
       title.className =
@@ -1447,9 +1450,7 @@ async function loadObjectSources(
       if (metaParts.length > 0) {
 
         const meta =
-          document.createElement(
-            'div'
-          );
+          document.createElement('div');
 
 
         meta.className =
@@ -1469,9 +1470,7 @@ async function loadObjectSources(
       if (source.url) {
 
         const linkElement =
-          document.createElement(
-            'a'
-          );
+          document.createElement('a');
 
 
         linkElement.className =
@@ -1481,14 +1480,11 @@ async function loadObjectSources(
         linkElement.href =
           source.url;
 
-
         linkElement.target =
           '_blank';
 
-
         linkElement.rel =
           'noopener noreferrer';
-
 
         linkElement.textContent =
           'Բացել աղբյուրը';
@@ -1593,7 +1589,7 @@ function applyFilters() {
 
 
 /* =========================================
-   LOAD WATER OBJECTS
+   LOAD OBJECTS
    ========================================= */
 
 async function loadObjects() {
