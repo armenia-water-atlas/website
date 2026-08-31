@@ -241,13 +241,38 @@ function renderMarkers(data) {
       `Քարտեզագրված՝ ${mapped.length}`;
 
 
-  if (mapped.length > 0) {
+if (mapped.length > 0) {
+
+  /*
+    Երբ ցուցադրվում է ամբողջ բազան,
+    քարտեզը ցույց ենք տալիս Հայաստանի ամբողջ տարածքով։
+  */
+
+  if (data.length === allObjects.length) {
+
+    const armeniaBounds = [
+      [38.84, 43.44],  // հարավ-արևմուտք
+      [41.30, 46.63]   // հյուսիս-արևելք
+    ];
+
+    map.fitBounds(
+      armeniaBounds,
+      {
+        padding: [25, 25]
+      }
+    );
+
+  } else {
+
+    /*
+      Որոնման կամ ֆիլտրի դեպքում
+      կենտրոնանում ենք գտնված օբյեկտների վրա։
+    */
 
     const bounds = mapped.map(item => [
       item.latitude,
       item.longitude
     ]);
-
 
     map.fitBounds(
       bounds,
@@ -257,6 +282,7 @@ function renderMarkers(data) {
       }
     );
   }
+}
 }
 
 
