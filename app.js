@@ -616,8 +616,8 @@ function getRiverStyle(
     'selected'
   ) {
     return {
-      color: '#0d47a1',
-      weight: 6,
+      color: '#003366',
+      weight: 7,
       opacity: 1
     };
   }
@@ -628,9 +628,9 @@ function getRiverStyle(
     'flows_into'
   ) {
     return {
-      color: '#64b5f6',
+      color: '#00a8e8',
       weight: 4,
-      opacity: 0.88
+      opacity: 0.95
     };
   }
 
@@ -644,9 +644,9 @@ function getRiverStyle(
 
   if (level === 1) {
     return {
-      color: '#90caf9',
-      weight: 3.5,
-      opacity: 0.86
+      color: '#7dd3fc',
+      weight: 4,
+      opacity: 0.95
     };
   }
 
@@ -696,6 +696,17 @@ function setRiverLayerStyle(
     part.setStyle(
       part.atlasStyle
     );
+
+
+    if (
+      part._path &&
+      part.atlasStyle.color
+    ) {
+      part._path.setAttribute(
+        'stroke',
+        part.atlasStyle.color
+      );
+    }
   });
 }
 
@@ -806,6 +817,17 @@ function renderMarkers(data) {
                 weight:
                   baseStyle.weight + 2
               });
+
+
+              if (
+                part._path &&
+                baseStyle.color
+              ) {
+                part._path.setAttribute(
+                  'stroke',
+                  baseStyle.color
+                );
+              }
             }
           }
         );
@@ -818,10 +840,25 @@ function renderMarkers(data) {
             if (
               typeof part.setStyle === 'function'
             ) {
-              part.setStyle(
+              const baseStyle =
                 part.atlasStyle ||
-                DEFAULT_RIVER_STYLE
+                DEFAULT_RIVER_STYLE;
+
+
+              part.setStyle(
+                baseStyle
               );
+
+
+              if (
+                part._path &&
+                baseStyle.color
+              ) {
+                part._path.setAttribute(
+                  'stroke',
+                  baseStyle.color
+                );
+              }
             }
           }
         );
