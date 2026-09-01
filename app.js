@@ -476,6 +476,262 @@ function buildHoverInfo(item) {
 
 
 /* =========================================
+   RIVER NETWORK STYLING
+   ========================================= */
+
+const DEFAULT_RIVER_STYLE = {
+  color: '#1976d2',
+  weight: 4,
+  opacity: 0.9
+};
+
+
+function getRiverNetwork(
+  objectId
+) {
+
+  const selectedId =
+    Number(objectId);
+
+  const network =
+    new Map();
+
+
+  if (
+    !Number.isInteger(selectedId) ||
+    selectedId <= 0
+  ) {
+    return network;
+  }
+
+
+  network.set(
+    selectedId,
+    {
+      level: 0,
+      relation: 'selected'
+    }
+  );
+
+
+  function addTributaries(
+    recipientId,
+    level
+  ) {
+
+    riverRelations
+      .filter(
+        relation =>
+          Number(relation.recipient_id) ===
+          Number(recipientId)
+      )
+      .forEach(relation => {
+
+        const tributaryId =
+          Number(relation.tributary_id);
+
+        if (network.has(tributaryId)) {
+          return;
+        }
+
+        network.set(
+          tributaryId,
+          {
+            level,
+            relation: 'tributary'
+          }
+        );
+
+        addTributaries(
+          tributaryId,
+          level + 1
+        );
+      });
+  }
+
+
+  function addRecipients(
+    tributaryId,
+    level
+  ) {
+
+    riverRelations
+      .filter(
+        relation =>
+          Number(relation.tributary_id) ===
+          Number(tributaryId)
+      )
+      .forEach(relation => {
+
+        const recipientId =
+          Number(relation.recipient_id);
+
+        if (network.has(recipientId)) {
+          return;
+        }
+
+        network.set(
+          recipientId,
+          {
+            level,
+            relation: 'flows_into'
+          }
+        );
+
+        addRecipients(
+          recipientId,
+          level - 1
+        );
+      });
+  }
+
+
+  addTributaries(
+    selectedId,
+    1
+  );
+
+  addRecipients(
+    selectedId,
+    -1
+  );
+
+  return network;
+}
+
+
+function getRiverStyle(
+  networkInfo = null
+) {
+
+  if (!networkInfo) {
+    return {
+      ...DEFAULT_RIVER_STYLE
+    };
+  }
+
+
+  if (
+    networkInfo.relation ===
+    'selected'
+  ) {
+    return {
+      color: '#0d47a1',
+      weight: 6,
+      opacity: 1
+    };
+  }
+
+
+  if (
+    networkInfo.relation ===
+    'flows_into'
+  ) {
+    return {
+      color: '#64b5f6',
+      weight: 4,
+      opacity: 0.88
+    };
+  }
+
+
+  const level =
+    Math.max(
+      1,
+      Number(networkInfo.level) || 1
+    );
+
+
+  if (level === 1) {
+    return {
+      color: '#90caf9',
+      weight: 3.5,
+      opacity: 0.86
+    };
+  }
+
+
+  if (level === 2) {
+    return {
+      color: '#bbdefb',
+      weight: 3,
+      opacity: 0.8
+    };
+  }
+
+
+  return {
+    color: '#d6ebfb',
+    weight: 2.5,
+    opacity: 0.74
+  };
+}
+
+
+function setRiverLayerStyle(
+  layer,
+  style
+) {
+
+  if (
+    !layer ||
+    typeof layer.eachLayer !== 'function'
+  ) {
+    return;
+  }
+
+
+  layer.eachLayer(part => {
+
+    if (
+      typeof part.setStyle !== 'function'
+    ) {
+      return;
+    }
+
+    part.atlasStyle = {
+      ...style
+    };
+
+    part.setStyle(
+      part.atlasStyle
+    );
+  });
+}
+
+
+function applyRiverNetworkStyles(
+  selectedId = null
+) {
+
+  const network =
+    selectedId
+      ? getRiverNetwork(selectedId)
+      : new Map();
+
+
+  markers.forEach(layer => {
+
+    if (
+      layer.waterObjectType !== 'river'
+    ) {
+      return;
+    }
+
+    const networkInfo =
+      network.get(
+        Number(layer.waterObjectId)
+      ) || null;
+
+    setRiverLayerStyle(
+      layer,
+      getRiverStyle(networkInfo)
+    );
+  });
+}
+
+
+/* =========================================
    MARKERS
    ========================================= */
 
@@ -506,9 +762,7 @@ function renderMarkers(data) {
           item.geometry,
           {
             style: {
-              color: '#1976d2',
-              weight: 4,
-              opacity: 0.9
+              ...DEFAULT_RIVER_STYLE
             }
           }
         ).addTo(map);
@@ -530,6 +784,11 @@ function renderMarkers(data) {
         );
 
 
+        part.atlasStyle = {
+          ...DEFAULT_RIVER_STYLE
+        };
+
+
         part.on(
           'mouseover',
           () => {
@@ -537,8 +796,15 @@ function renderMarkers(data) {
             if (
               typeof part.setStyle === 'function'
             ) {
+
+              const baseStyle =
+                part.atlasStyle ||
+                DEFAULT_RIVER_STYLE;
+
               part.setStyle({
-                weight: 6
+                ...baseStyle,
+                weight:
+                  baseStyle.weight + 2
               });
             }
           }
@@ -552,9 +818,10 @@ function renderMarkers(data) {
             if (
               typeof part.setStyle === 'function'
             ) {
-              part.setStyle({
-                weight: 4
-              });
+              part.setStyle(
+                part.atlasStyle ||
+                DEFAULT_RIVER_STYLE
+              );
             }
           }
         );
@@ -584,6 +851,10 @@ function renderMarkers(data) {
 
       riverLayer.waterObjectId =
         item.id;
+
+
+      riverLayer.waterObjectType =
+        item.type;
 
 
       layer =
@@ -644,6 +915,26 @@ function renderMarkers(data) {
 
     markers.push(layer);
   });
+
+
+  const selectedObject =
+    findObjectById(
+      getObjectIdFromUrl()
+    );
+
+
+  if (
+    selectedObject &&
+    selectedObject.type === 'river'
+  ) {
+    applyRiverNetworkStyles(
+      selectedObject.id
+    );
+  } else {
+    applyRiverNetworkStyles(
+      null
+    );
+  }
 
 
   document
@@ -784,6 +1075,17 @@ async function openObjectDetails(
 ) {
 
   closeAllTooltips();
+
+
+  if (item.type === 'river') {
+    applyRiverNetworkStyles(
+      item.id
+    );
+  } else {
+    applyRiverNetworkStyles(
+      null
+    );
+  }
 
 
   if (updateUrl) {
@@ -1006,6 +1308,11 @@ function closeObjectDetails(
 ) {
 
   closeAllTooltips();
+
+
+  applyRiverNetworkStyles(
+    null
+  );
 
 
   const panel =
