@@ -1671,7 +1671,59 @@ async function loadObjectSources(
   }
 }
 
+/* =========================================
+   RIVER RELATIONS
+   ========================================= */
 
+async function loadRiverRelations() {
+
+  const url =
+    `${SUPABASE_URL}/rest/v1/river_relations` +
+    `?select=tributary_id,recipient_id,relation_type`;
+
+
+  try {
+
+    const response =
+      await fetch(
+        url,
+        {
+          headers: {
+            apikey:
+              SUPABASE_KEY
+          }
+        }
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+
+    riverRelations =
+      await response.json();
+
+
+    console.log(
+      `River relations loaded: ${riverRelations.length}`
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'River relations load error:',
+      error
+    );
+
+
+    riverRelations = [];
+  }
+}
 /* =========================================
    FILTERS
    ========================================= */
@@ -1844,7 +1896,7 @@ async function loadObjects() {
     allObjects =
       await response.json();
 
-
+await loadRiverRelations();
     const hrazdan =
       findObjectById(
         28
