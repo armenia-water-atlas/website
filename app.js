@@ -25,6 +25,7 @@ const DATA_SCOPE_LABELS = {
   legal_status: 'իրավական կարգավիճակ',
   general: 'ընդհանուր տվյալներ',
   coordinates: 'կոորդինատներ',
+  geometry: 'քարտեզային երկրաչափություն',
   height: 'բարձրություն',
   elevation: 'բարձրությունը ծովի մակարդակից'
 };
@@ -104,8 +105,28 @@ function clearMarkers() {
 
 function closeAllTooltips() {
 
-  markers.forEach(marker => {
-    marker.closeTooltip();
+  markers.forEach(layer => {
+
+    if (
+      typeof layer.closeTooltip === 'function'
+    ) {
+      layer.closeTooltip();
+    }
+
+
+    if (
+      typeof layer.eachLayer === 'function'
+    ) {
+
+      layer.eachLayer(child => {
+
+        if (
+          typeof child.closeTooltip === 'function'
+        ) {
+          child.closeTooltip();
+        }
+      });
+    }
   });
 }
 
@@ -298,10 +319,58 @@ function findObjectById(
 }
 
 
+function findMapLayerByObjectId(
+  objectId
+) {
+
+  return markers.find(
+    layer =>
+      Number(layer.waterObjectId) ===
+      Number(objectId)
+  );
+}
+
+
 function focusObjectOnMap(
   item,
   zoom = 13
 ) {
+
+  closeAllTooltips();
+
+
+  const layer =
+    findMapLayerByObjectId(
+      item.id
+    );
+
+
+  if (
+    layer &&
+    typeof layer.getBounds === 'function'
+  ) {
+
+    const bounds =
+      layer.getBounds();
+
+
+    if (
+      bounds &&
+      bounds.isValid()
+    ) {
+
+      map.fitBounds(
+        bounds,
+        {
+          padding: [35, 35],
+          maxZoom: 11
+        }
+      );
+
+      return;
+    }
+  }
+
 
   if (
     item.latitude === null ||
@@ -309,9 +378,6 @@ function focusObjectOnMap(
   ) {
     return;
   }
-
-
-  closeAllTooltips();
 
 
   map.setView(
@@ -420,70 +486,163 @@ function renderMarkers(data) {
 
   const mapped =
     data.filter(item =>
-      item.latitude !== null &&
-      item.longitude !== null
+      item.geometry ||
+      (
+        item.latitude !== null &&
+        item.longitude !== null
+      )
     );
 
 
   mapped.forEach(item => {
 
-    const marker =
-      L.marker([
-        item.latitude,
-        item.longitude
-      ]).addTo(map);
+    let layer = null;
 
 
-    /*
-      Կարևոր տարբերությունը այստեղ է.
+    if (item.geometry) {
 
-      direction: 'auto'
-
-      Leaflet-ը ինքն է որոշում՝
-      վահանակը որ կողմում բացել,
-      որպեսզի քարտեզից դուրս չգա։
-    */
-
-    marker.bindTooltip(
-      buildHoverInfo(item),
-      {
-        direction: 'auto',
-        offset: [0, 0],
-        opacity: 1,
-        sticky: false,
-        interactive: false,
-        className:
-          'object-hover-tooltip'
-      }
-    );
+      const riverLayer =
+        L.geoJSON(
+          item.geometry,
+          {
+            style: {
+              color: '#1976d2',
+              weight: 4,
+              opacity: 0.9
+            }
+          }
+        ).addTo(map);
 
 
-    marker.waterObjectId =
-      item.id;
+      riverLayer.eachLayer(part => {
 
-
-    marker.on(
-      'click',
-      () => {
-
-        marker.closeTooltip();
-
-
-        openObjectDetails(
-          item,
-          true
+        part.bindTooltip(
+          buildHoverInfo(item),
+          {
+            direction: 'auto',
+            offset: [0, 0],
+            opacity: 1,
+            sticky: true,
+            interactive: false,
+            className:
+              'object-hover-tooltip'
+          }
         );
 
 
-        focusObjectOnMap(
-          item,
-          13
+        part.on(
+          'mouseover',
+          () => {
+
+            if (
+              typeof part.setStyle === 'function'
+            ) {
+              part.setStyle({
+                weight: 6
+              });
+            }
+          }
         );
-      }
-    );
 
 
-    markers.push(marker);
+        part.on(
+          'mouseout',
+          () => {
+
+            if (
+              typeof part.setStyle === 'function'
+            ) {
+              part.setStyle({
+                weight: 4
+              });
+            }
+          }
+        );
+
+
+        part.on(
+          'click',
+          () => {
+
+            part.closeTooltip();
+
+
+            openObjectDetails(
+              item,
+              true
+            );
+
+
+            focusObjectOnMap(
+              item,
+              13
+            );
+          }
+        );
+      });
+
+
+      riverLayer.waterObjectId =
+        item.id;
+
+
+      layer =
+        riverLayer;
+
+    } else {
+
+      const marker =
+        L.marker([
+          item.latitude,
+          item.longitude
+        ]).addTo(map);
+
+
+      marker.bindTooltip(
+        buildHoverInfo(item),
+        {
+          direction: 'auto',
+          offset: [0, 0],
+          opacity: 1,
+          sticky: false,
+          interactive: false,
+          className:
+            'object-hover-tooltip'
+        }
+      );
+
+
+      marker.waterObjectId =
+        item.id;
+
+
+      marker.on(
+        'click',
+        () => {
+
+          marker.closeTooltip();
+
+
+          openObjectDetails(
+            item,
+            true
+          );
+
+
+          focusObjectOnMap(
+            item,
+            13
+          );
+        }
+      );
+
+
+      layer =
+        marker;
+    }
+
+
+    markers.push(layer);
   });
 
 
@@ -516,11 +675,8 @@ function renderMarkers(data) {
 
   if (mapped.length === 1) {
 
-    map.setView(
-      [
-        mapped[0].latitude,
-        mapped[0].longitude
-      ],
+    focusObjectOnMap(
+      mapped[0],
       13
     );
 
@@ -530,20 +686,26 @@ function renderMarkers(data) {
 
   if (mapped.length > 1) {
 
+    const group =
+      L.featureGroup(
+        markers
+      );
+
+
     const bounds =
-      mapped.map(item => [
-        item.latitude,
-        item.longitude
-      ]);
+      group.getBounds();
 
 
-    map.fitBounds(
-      bounds,
-      {
-        padding: [30, 30],
-        maxZoom: 10
-      }
-    );
+    if (bounds.isValid()) {
+
+      map.fitBounds(
+        bounds,
+        {
+          padding: [30, 30],
+          maxZoom: 10
+        }
+      );
+    }
   }
 }
 
@@ -1589,6 +1751,63 @@ function applyFilters() {
 
 
 /* =========================================
+   GEOMETRY
+   ========================================= */
+
+async function loadObjectGeometry(
+  objectId
+) {
+
+  const url =
+    `${SUPABASE_URL}/rest/v1/rpc/get_water_object_geometry`;
+
+
+  try {
+
+    const response =
+      await fetch(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            apikey:
+              SUPABASE_KEY,
+            'Content-Type':
+              'application/json'
+          },
+          body:
+            JSON.stringify({
+              p_object_id:
+                objectId
+            })
+        }
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+
+    return await response.json();
+
+
+  } catch (error) {
+
+    console.error(
+      `Geometry load error for object ${objectId}:`,
+      error
+    );
+
+    return null;
+  }
+}
+
+
+/* =========================================
    LOAD OBJECTS
    ========================================= */
 
@@ -1624,6 +1843,21 @@ async function loadObjects() {
 
     allObjects =
       await response.json();
+
+
+    const hrazdan =
+      findObjectById(
+        28
+      );
+
+
+    if (hrazdan) {
+
+      hrazdan.geometry =
+        await loadObjectGeometry(
+          28
+        );
+    }
 
 
     renderList(
