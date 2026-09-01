@@ -1859,7 +1859,19 @@ async function loadObjects() {
         );
     }
 
+const marmarik =
+  findObjectById(
+    29
+  );
 
+
+if (marmarik) {
+
+  marmarik.geometry =
+    await loadObjectGeometry(
+      29
+    );
+}
     renderList(
       allObjects
     );
