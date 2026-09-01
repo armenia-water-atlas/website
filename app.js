@@ -67,7 +67,7 @@ L.tileLayer(
 
 let allObjects = [];
 let markers = [];
-
+let riverRelations = [];
 
 /* =========================================
    HELPERS
