@@ -68,6 +68,12 @@ L.tileLayer(
 let allObjects = [];
 let markers = [];
 
+// Small natural lakes use fixed-size symbols. At low zoom levels nearby
+// symbols are gently displaced in screen space so they do not cover each other.
+// Their true coordinates are preserved separately and used for details/focus.
+let smallLakeCollisionMarkers = [];
+let smallLakeConnectorLines = [];
+
 
 /* =========================================
    HELPERS
@@ -99,7 +105,187 @@ function clearMarkers() {
     map.removeLayer(marker);
   });
 
+  smallLakeConnectorLines.forEach(line => {
+    map.removeLayer(line);
+  });
+
   markers = [];
+  smallLakeCollisionMarkers = [];
+  smallLakeConnectorLines = [];
+}
+
+
+/*
+ * Keep fixed-size lake symbols from overlapping.
+ *
+ * The algorithm works in Leaflet layer pixels, not geographic coordinates:
+ *  - every lake starts at its true position;
+ *  - nearby symbols repel each other until there is at least MIN_DISTANCE_PX;
+ *  - a light spring keeps each symbol close to its true position;
+ *  - when a symbol is displaced, a thin dashed line points to the true location.
+ *
+ * At higher zoom levels the true positions naturally separate, so displacement
+ * becomes very small or disappears completely.
+ */
+function layoutSmallLakeMarkers() {
+
+  if (!smallLakeCollisionMarkers.length) {
+    return;
+  }
+
+  smallLakeConnectorLines.forEach(line => {
+    map.removeLayer(line);
+  });
+  smallLakeConnectorLines = [];
+
+  const MIN_DISTANCE_PX = 30;
+  const MAX_DISPLACEMENT_PX = 54;
+  const ITERATIONS = 32;
+  const SPRING = 0.10;
+
+  const nodes = smallLakeCollisionMarkers.map(entry => {
+
+    const anchor =
+      map.latLngToLayerPoint(
+        entry.trueLatLng
+      );
+
+    return {
+      entry,
+      anchor,
+      point: anchor.clone()
+    };
+  });
+
+  for (let iteration = 0; iteration < ITERATIONS; iteration += 1) {
+
+    for (let i = 0; i < nodes.length; i += 1) {
+
+      for (let j = i + 1; j < nodes.length; j += 1) {
+
+        const a = nodes[i];
+        const b = nodes[j];
+
+        let dx = b.point.x - a.point.x;
+        let dy = b.point.y - a.point.y;
+        let distance =
+          Math.sqrt(dx * dx + dy * dy);
+
+        if (distance >= MIN_DISTANCE_PX) {
+          continue;
+        }
+
+        // Exact same projected point: give the pair a stable deterministic axis.
+        if (distance < 0.01) {
+          const angle =
+            ((i * 137 + j * 67) % 360) *
+            Math.PI / 180;
+
+          dx = Math.cos(angle);
+          dy = Math.sin(angle);
+          distance = 1;
+        }
+
+        const overlap =
+          MIN_DISTANCE_PX - distance;
+
+        const push =
+          overlap * 0.52;
+
+        const ux = dx / distance;
+        const uy = dy / distance;
+
+        a.point.x -= ux * push;
+        a.point.y -= uy * push;
+        b.point.x += ux * push;
+        b.point.y += uy * push;
+      }
+    }
+
+    nodes.forEach(node => {
+
+      node.point.x +=
+        (node.anchor.x - node.point.x) *
+        SPRING;
+
+      node.point.y +=
+        (node.anchor.y - node.point.y) *
+        SPRING;
+
+      const dx =
+        node.point.x - node.anchor.x;
+
+      const dy =
+        node.point.y - node.anchor.y;
+
+      const displacement =
+        Math.sqrt(dx * dx + dy * dy);
+
+      if (
+        displacement >
+        MAX_DISPLACEMENT_PX
+      ) {
+
+        const ratio =
+          MAX_DISPLACEMENT_PX /
+          displacement;
+
+        node.point.x =
+          node.anchor.x +
+          dx * ratio;
+
+        node.point.y =
+          node.anchor.y +
+          dy * ratio;
+      }
+    });
+  }
+
+  nodes.forEach(node => {
+
+    const displayLatLng =
+      map.layerPointToLatLng(
+        node.point
+      );
+
+    node.entry.marker.setLatLng(
+      displayLatLng
+    );
+
+    const pixelDisplacement =
+      node.point.distanceTo(
+        node.anchor
+      );
+
+    if (pixelDisplacement > 4) {
+
+      const line =
+        L.polyline(
+          [
+            node.entry.trueLatLng,
+            displayLatLng
+          ],
+          {
+            color: '#1976d2',
+            weight: 1,
+            opacity: 0.45,
+            dashArray: '3,4',
+            interactive: false
+          }
+        ).addTo(map);
+
+      if (
+        typeof line.bringToBack ===
+        'function'
+      ) {
+        line.bringToBack();
+      }
+
+      smallLakeConnectorLines.push(
+        line
+      );
+    }
+  });
 }
 
 
@@ -582,6 +768,18 @@ function renderMarkers(data) {
       marker.waterObjectId =
         item.id;
 
+      marker.trueLatLng =
+        L.latLng(
+          item.latitude,
+          item.longitude
+        );
+
+      smallLakeCollisionMarkers.push({
+        marker,
+        trueLatLng:
+          marker.trueLatLng
+      });
+
       marker.on(
         'click',
         () => {
@@ -731,6 +929,8 @@ function renderMarkers(data) {
     markers.push(layer);
   });
 
+  layoutSmallLakeMarkers();
+
   document
     .getElementById(
       'map-count'
@@ -787,6 +987,16 @@ function renderMarkers(data) {
     }
   }
 }
+
+
+// Recalculate only after the map stops moving/zooming.
+// This keeps the visual separation stable and inexpensive.
+map.on(
+  'zoomend moveend',
+  () => {
+    layoutSmallLakeMarkers();
+  }
+);
 
 
 /* =========================================
