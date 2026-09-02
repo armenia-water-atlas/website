@@ -68,8 +68,8 @@ L.tileLayer(
 let allObjects = [];
 let markers = [];
 
-// Small natural lakes use fixed-size symbols. At low zoom levels nearby
-// symbols are gently displaced in screen space so they do not cover each other.
+// Small natural lakes and waterfalls use fixed-size symbols. At low zoom levels
+// nearby symbols are gently displaced in screen space so they do not cover each other.
 // Their true coordinates are preserved separately and used for details/focus.
 let smallLakeCollisionMarkers = [];
 let smallLakeConnectorLines = [];
@@ -116,7 +116,7 @@ function clearMarkers() {
 
 
 /*
- * Keep fixed-size lake symbols from overlapping.
+ * Keep fixed-size lake/waterfall symbols from overlapping.
  *
  * The algorithm works in Leaflet layer pixels, not geographic coordinates:
  *  - every lake starts at its true position;
@@ -707,6 +707,50 @@ function createLakeIcon() {
 }
 
 
+function createWaterfallIcon() {
+
+  return L.divIcon({
+    className: 'waterfall-symbol-wrapper',
+    html: `
+      <div
+        style="
+          width:22px;
+          height:22px;
+          border:2px solid #1976d2;
+          border-radius:50%;
+          background:#ffffff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          box-shadow:0 1px 3px rgba(0,0,0,.28);
+        "
+        aria-hidden="true"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g transform="rotate(9 7 7)">
+            <path d="M3.2 1 C2.2 3 4.2 4.2 3.2 6.2 S2.2 9.4 3.2 13"
+                  fill="none" stroke="#1976d2" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M7 1 C6 3 8 4.2 7 6.2 S6 9.4 7 13"
+                  fill="none" stroke="#1976d2" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M10.8 1 C9.8 3 11.8 4.2 10.8 6.2 S9.8 9.4 10.8 13"
+                  fill="none" stroke="#1976d2" stroke-width="1.6" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+    `,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    tooltipAnchor: [0, -12]
+  });
+}
+
+
 function renderMarkers(data) {
 
   clearMarkers();
@@ -730,14 +774,27 @@ function renderMarkers(data) {
 
     let layer = null;
 
+    const isLake =
+      item.type === 'lake';
+
+    const isSevan =
+      isLake &&
+      item.name_hy === 'Սևանա լիճ';
+
     const isSmallLake =
-      item.type === 'lake' &&
-      item.name_hy !== 'Սևանա լիճ';
+      isLake &&
+      !isSevan;
+
+    const isWaterfall =
+      item.type === 'waterfall';
+
+    const hasCoordinates =
+      item.latitude !== null &&
+      item.longitude !== null;
 
     if (
-      isSmallLake &&
-      item.latitude !== null &&
-      item.longitude !== null
+      (isSmallLake || isWaterfall) &&
+      hasCoordinates
     ) {
 
       const marker =
@@ -747,7 +804,10 @@ function renderMarkers(data) {
             item.longitude
           ],
           {
-            icon: createLakeIcon(),
+            icon:
+              isWaterfall
+                ? createWaterfallIcon()
+                : createLakeIcon(),
             zIndexOffset: 500
           }
         ).addTo(map);
@@ -879,6 +939,64 @@ function renderMarkers(data) {
 
       layer =
         geometryLayer;
+
+      // Lake Sevan keeps its real polygon, but also receives
+      // the same conventional lake symbol used for other lakes.
+      if (
+        isSevan &&
+        hasCoordinates
+      ) {
+
+        const sevanMarker =
+          L.marker(
+            [
+              item.latitude,
+              item.longitude
+            ],
+            {
+              icon: createLakeIcon(),
+              zIndexOffset: 700
+            }
+          ).addTo(map);
+
+        sevanMarker.bindTooltip(
+          buildHoverInfo(item),
+          {
+            direction: 'auto',
+            offset: [0, 0],
+            opacity: 1,
+            sticky: false,
+            interactive: false,
+            className:
+              'object-hover-tooltip'
+          }
+        );
+
+        sevanMarker.waterObjectId =
+          item.id;
+
+        sevanMarker.on(
+          'click',
+          () => {
+
+            sevanMarker.closeTooltip();
+
+            openObjectDetails(
+              item,
+              true
+            );
+
+            focusObjectOnMap(
+              item,
+              13
+            );
+          }
+        );
+
+        markers.push(
+          sevanMarker
+        );
+      }
 
     } else {
 
