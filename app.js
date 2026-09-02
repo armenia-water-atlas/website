@@ -43,6 +43,14 @@ const ARMENIA_CENTER = [
 
 const ARMENIA_ZOOM = 7.5;
 
+// Approximate geographic envelope of the Republic of Armenia.
+// We use this when a category is selected so the whole country remains visible,
+// even if that category has objects only in one part of Armenia.
+const ARMENIA_BOUNDS = L.latLngBounds(
+  [38.82, 43.40],
+  [41.32, 46.70]
+);
+
 
 const map = L.map(
   'map',
@@ -1078,50 +1086,16 @@ function renderMarkers(data) {
     return;
   }
 
-  if (
-    data.length ===
-    allObjects.length
-  ) {
-
-    map.setView(
-      ARMENIA_CENTER,
-      ARMENIA_ZOOM
-    );
-
-    return;
-  }
-
-  if (mapped.length === 1) {
-
-    focusObjectOnMap(
-      mapped[0],
-      13
-    );
-
-    return;
-  }
-
-  if (mapped.length > 1) {
-
-    const group =
-      L.featureGroup(
-        markers
-      );
-
-    const bounds =
-      group.getBounds();
-
-    if (bounds.isValid()) {
-
-      map.fitBounds(
-        bounds,
-        {
-          padding: [30, 30],
-          maxZoom: 10
-        }
-      );
+  // Category selection must never crop Armenia to the extent of the
+  // selected objects. Keep the whole country visible so empty regions are
+  // immediately recognizable as regions without objects of this category.
+  map.fitBounds(
+    ARMENIA_BOUNDS,
+    {
+      padding: [24, 24],
+      maxZoom: 8
     }
-  }
+  );
 }
 
 
@@ -2312,6 +2286,15 @@ async function loadObjects() {
 
     renderMarkers(
       []
+    );
+
+
+    map.fitBounds(
+      ARMENIA_BOUNDS,
+      {
+        padding: [24, 24],
+        maxZoom: 8
+      }
     );
 
 
