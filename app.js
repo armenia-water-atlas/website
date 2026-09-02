@@ -18,7 +18,10 @@ const TYPE_LABELS = {
 
 
 const STATUS_LABELS = {
-  natural: 'Բնական'
+  natural: 'Բնական',
+  operational: 'Գործող',
+  planned: 'Նախատեսվող',
+  construction: 'Կառուցվող'
 };
 
 
@@ -666,6 +669,19 @@ function buildHoverInfo(item) {
   }
 
 
+  if (
+    item.type === 'hydropower' &&
+    item.installed_capacity_mw !== null
+  ) {
+
+    html +=
+      `<div class="popup-row">` +
+      `<strong>Հզորություն՝</strong> ` +
+      `${item.installed_capacity_mw} ՄՎտ` +
+      `</div>`;
+  }
+
+
   return html;
 }
 
@@ -777,6 +793,58 @@ function createWaterfallIcon() {
   });
 }
 
+
+function createHydropowerIcon() {
+
+  return L.divIcon({
+    className: 'hydropower-symbol-wrapper',
+    html: `
+      <div
+        style="
+          width:24px;
+          height:24px;
+          border:2px solid #1976d2;
+          border-radius:50%;
+          background:#ffffff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          box-shadow:0 1px 3px rgba(0,0,0,.28);
+        "
+        aria-hidden="true"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <!-- Conventional hydropower-style mark:
+               a compact dam/turbine block with an energy bolt. -->
+          <g
+            fill="none"
+            stroke="#1976d2"
+            stroke-width="1.35"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M2.2 5.0 H8.0 V12.6 H2.2 Z"/>
+            <path d="M4.1 5.0 V12.6"/>
+            <path d="M6.1 5.0 V12.6"/>
+            <path d="M1.6 13.5 C3.0 12.8 4.4 12.8 5.8 13.5 C7.2 14.2 8.6 14.2 10.0 13.5"/>
+            <path d="M10.2 2.0 L8.3 7.0 H10.7 L9.3 12.0 L14.0 5.9 H11.4 L13.0 2.0 Z"/>
+          </g>
+        </svg>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    tooltipAnchor: [0, -13]
+  });
+}
+
+
 function renderMarkers(data) {
 
   clearMarkers();
@@ -814,12 +882,15 @@ function renderMarkers(data) {
     const isWaterfall =
       item.type === 'waterfall';
 
+    const isHydropower =
+      item.type === 'hydropower';
+
     const hasCoordinates =
       item.latitude !== null &&
       item.longitude !== null;
 
     if (
-      (isSmallLake || isWaterfall) &&
+      (isSmallLake || isWaterfall || isHydropower) &&
       hasCoordinates
     ) {
 
@@ -833,8 +904,13 @@ function renderMarkers(data) {
             icon:
               isWaterfall
                 ? createWaterfallIcon()
-                : createLakeIcon(),
-            zIndexOffset: 500
+                : isHydropower
+                  ? createHydropowerIcon()
+                  : createLakeIcon(),
+            zIndexOffset:
+              isHydropower
+                ? 650
+                : 500
           }
         ).addTo(map);
 
@@ -1361,6 +1437,71 @@ async function openObjectDetails(
     'Տարի',
     item.year
   );
+
+
+  if (item.type === 'hydropower') {
+
+    addDetailField(
+      dataContainer,
+      'Գետ',
+      item.river_name
+    );
+
+
+    addDetailField(
+      dataContainer,
+      'Կասկադ',
+      item.cascade_name
+    );
+
+
+    addDetailField(
+      dataContainer,
+      'Տեղադրված հզորություն',
+      item.installed_capacity_mw !== null
+        ? `${item.installed_capacity_mw} ՄՎտ`
+        : null
+    );
+
+
+    addDetailField(
+      dataContainer,
+      'Առկա հզորություն',
+      item.available_capacity_mw !== null
+        ? `${item.available_capacity_mw} ՄՎտ`
+        : null
+    );
+
+
+    addDetailField(
+      dataContainer,
+      'Միջին տարեկան արտադրություն',
+      item.annual_generation_gwh !== null
+        ? `${item.annual_generation_gwh} ԳՎտժ`
+        : null
+    );
+
+
+    addDetailField(
+      dataContainer,
+      'ՀԷԿ-ի տեսակ',
+      item.hydropower_kind
+    );
+
+
+    addDetailField(
+      dataContainer,
+      'Աշխատանքի ռեժիմ',
+      item.operation_regime
+    );
+
+
+    addDetailField(
+      dataContainer,
+      'Օպերատոր',
+      item.operator
+    );
+  }
 
 
   const description =
@@ -2215,7 +2356,7 @@ async function loadObjects() {
 
   const url =
     `${SUPABASE_URL}/rest/v1/water_objects` +
-    `?select=id,type,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m` +
+    `?select=id,type,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m,river_name,cascade_name,installed_capacity_mw,available_capacity_mw,annual_generation_gwh,hydropower_kind,operation_regime,operator` +
     `&order=name_hy.asc`;
 
 
@@ -2382,6 +2523,121 @@ async function loadObjects() {
         `Տվյալների ստացման սխալ՝ ${error.message}`;
   }
 }
+
+
+/* =========================================
+   HYDROPOWER MENU ITEM
+   ========================================= */
+
+function ensureHydropowerTypeFilter() {
+
+  if (
+    document.querySelector(
+      '.type-filter[value="hydropower"]'
+    )
+  ) {
+    return;
+  }
+
+
+  const existingFilters =
+    Array.from(
+      document.querySelectorAll(
+        '.type-filter'
+      )
+    );
+
+
+  if (!existingFilters.length) {
+    return;
+  }
+
+
+  const templateInput =
+    existingFilters[
+      existingFilters.length - 1
+    ];
+
+
+  const templateLabel =
+    templateInput.closest('label');
+
+
+  if (!templateLabel) {
+    return;
+  }
+
+
+  const newLabel =
+    templateLabel.cloneNode(true);
+
+
+  const newInput =
+    newLabel.querySelector(
+      '.type-filter'
+    );
+
+
+  if (!newInput) {
+    return;
+  }
+
+
+  newInput.value =
+    'hydropower';
+
+  newInput.checked =
+    false;
+
+
+  // Replace the visible label while preserving the page's existing
+  // checkbox markup and CSS classes.
+  const textNodes =
+    Array.from(
+      newLabel.childNodes
+    ).filter(
+      node =>
+        node.nodeType ===
+        Node.TEXT_NODE
+    );
+
+
+  if (textNodes.length) {
+
+    textNodes[
+      textNodes.length - 1
+    ].textContent =
+      ' ՀԷԿ-եր';
+
+  } else {
+
+    const visibleText =
+      newLabel.querySelector(
+        'span'
+      );
+
+
+    if (visibleText) {
+      visibleText.textContent =
+        'ՀԷԿ-եր';
+    } else {
+      newLabel.append(
+        document.createTextNode(
+          ' ՀԷԿ-եր'
+        )
+      );
+    }
+  }
+
+
+  templateLabel.parentElement.insertBefore(
+    newLabel,
+    templateLabel.nextSibling
+  );
+}
+
+
+ensureHydropowerTypeFilter();
 
 
 /* =========================================
