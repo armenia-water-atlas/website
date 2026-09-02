@@ -12,7 +12,8 @@ const TYPE_LABELS = {
   reservoir: 'Ջրամբար',
   canal: 'Ջրանցք',
   spring: 'Աղբյուր',
-  wetland: 'Խոնավ տարածք'
+  wetland: 'Խոնավ տարածք',
+  hydropower: 'ՀԷԿ'
 };
 
 
@@ -2141,7 +2142,6 @@ function applyFilters() {
 
 
         const matchesType =
-          selectedTypes.length === 0 ||
           selectedTypes.includes(
             item.type
           );
@@ -2170,7 +2170,9 @@ function applyFilters() {
       'status'
     )
     .textContent =
-      `Ցուցադրվում է ${filtered.length} օբյեկտ՝ ընդհանուր ${allObjects.length}-ից։`;
+      selectedTypes.length === 0
+        ? 'Ընտրեք օբյեկտի տեսակ մենյուից։'
+        : `Ցուցադրվում է ${filtered.length} օբյեկտ՝ ընդհանուր ${allObjects.length}-ից։`;
 }
 
 
@@ -2292,13 +2294,24 @@ async function loadObjects() {
     );
 
 
+    // Start with a clean map. Objects appear only after the user
+    // selects one or more object types from the menu.
+    document
+      .querySelectorAll(
+        '.type-filter'
+      )
+      .forEach(input => {
+        input.checked = false;
+      });
+
+
     renderList(
-      allObjects
+      []
     );
 
 
     renderMarkers(
-      allObjects
+      []
     );
 
 
@@ -2307,7 +2320,7 @@ async function loadObjects() {
         'status'
       )
       .textContent =
-        `Բազայից ստացվել է ${allObjects.length} ջրային օբյեկտ։`;
+        'Ընտրեք օբյեկտի տեսակ մենյուից։';
 
 
     const initialId =
@@ -2333,6 +2346,26 @@ async function loadObjects() {
 
 
       if (item) {
+
+        const typeFilter =
+          document.querySelector(
+            `.type-filter[value="${item.type}"]`
+          );
+
+        if (typeFilter) {
+          typeFilter.checked = true;
+        }
+
+
+        renderList(
+          [item]
+        );
+
+
+        renderMarkers(
+          [item]
+        );
+
 
         focusObjectOnMap(
           item,
