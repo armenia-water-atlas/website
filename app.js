@@ -676,7 +676,7 @@ function createLakeIcon() {
           height:22px;
           border:2px solid #1976d2;
           border-radius:50%;
-          background:#ffffff;
+          background:#eaf5ff;
           display:flex;
           align-items:center;
           justify-content:center;
