@@ -105,8 +105,28 @@ function clearMarkers() {
 
 function closeAllTooltips() {
 
-  markers.forEach(marker => {
-    marker.closeTooltip();
+  markers.forEach(layer => {
+
+    if (
+      typeof layer.closeTooltip === 'function'
+    ) {
+      layer.closeTooltip();
+    }
+
+
+    if (
+      typeof layer.eachLayer === 'function'
+    ) {
+
+      layer.eachLayer(child => {
+
+        if (
+          typeof child.closeTooltip === 'function'
+        ) {
+          child.closeTooltip();
+        }
+      });
+    }
   });
 }
 
@@ -299,12 +319,14 @@ function findObjectById(
 }
 
 
-function getObjectMapLayer(item) {
+function findMapLayerByObjectId(
+  objectId
+) {
 
   return markers.find(
     layer =>
       Number(layer.waterObjectId) ===
-      Number(item.id)
+      Number(objectId)
   );
 }
 
@@ -316,8 +338,11 @@ function focusObjectOnMap(
 
   closeAllTooltips();
 
+
   const layer =
-    getObjectMapLayer(item);
+    findMapLayerByObjectId(
+      item.id
+    );
 
 
   if (
@@ -454,112 +479,257 @@ function buildHoverInfo(item) {
    MARKERS
    ========================================= */
 
+function createLakeIcon() {
+
+  return L.divIcon({
+    className: 'lake-symbol-wrapper',
+    html: `
+      <div
+        style="
+          width:22px;
+          height:22px;
+          border:2px solid #1976d2;
+          border-radius:50%;
+          background:#ffffff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          box-shadow:0 1px 3px rgba(0,0,0,.28);
+        "
+        aria-hidden="true"
+      >
+        <svg
+          width="14"
+          height="10"
+          viewBox="0 0 14 10"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M1 2.2 C2.2 1.2 3.4 1.2 4.6 2.2 S7 3.2 8.2 2.2 S10.6 1.2 13 2.2"
+                fill="none" stroke="#1976d2" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M1 5 C2.2 4 3.4 4 4.6 5 S7 6 8.2 5 S10.6 4 13 5"
+                fill="none" stroke="#1976d2" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M1 7.8 C2.2 6.8 3.4 6.8 4.6 7.8 S7 8.8 8.2 7.8 S10.6 6.8 13 7.8"
+                fill="none" stroke="#1976d2" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+    `,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+    tooltipAnchor: [0, -12]
+  });
+}
+
+
 function renderMarkers(data) {
 
   clearMarkers();
 
-
   const mapped =
     data.filter(item =>
-      item.geometry !== null ||
+      (
+        item.type === 'lake' &&
+        item.name_hy !== 'Սևանա լիճ' &&
+        item.latitude !== null &&
+        item.longitude !== null
+      ) ||
+      item.geometry ||
       (
         item.latitude !== null &&
         item.longitude !== null
       )
     );
 
-
   mapped.forEach(item => {
 
     let layer = null;
 
-
-    if (item.geometry) {
-
-      try {
-
-        layer =
-          L.geoJSON(
-            item.geometry,
-            {
-              style: {
-                weight: 4,
-                opacity: 0.9
-              }
-            }
-          ).addTo(map);
-
-      } catch (error) {
-
-        console.error(
-          `Geometry error for object ${item.id}:`,
-          error
-        );
-      }
-    }
-
+    const isSmallLake =
+      item.type === 'lake' &&
+      item.name_hy !== 'Սևանա լիճ';
 
     if (
-      !layer &&
+      isSmallLake &&
       item.latitude !== null &&
       item.longitude !== null
     ) {
 
+      const marker =
+        L.marker(
+          [
+            item.latitude,
+            item.longitude
+          ],
+          {
+            icon: createLakeIcon(),
+            zIndexOffset: 500
+          }
+        ).addTo(map);
+
+      marker.bindTooltip(
+        buildHoverInfo(item),
+        {
+          direction: 'auto',
+          offset: [0, 0],
+          opacity: 1,
+          sticky: false,
+          interactive: false,
+          className:
+            'object-hover-tooltip'
+        }
+      );
+
+      marker.waterObjectId =
+        item.id;
+
+      marker.on(
+        'click',
+        () => {
+
+          marker.closeTooltip();
+
+          openObjectDetails(
+            item,
+            true
+          );
+
+          focusObjectOnMap(
+            item,
+            13
+          );
+        }
+      );
+
+      layer = marker;
+
+    } else if (item.geometry) {
+
+      const geometryLayer =
+        L.geoJSON(
+          item.geometry,
+          {
+            style: {
+              color: '#1976d2',
+              weight: 4,
+              opacity: 0.9
+            }
+          }
+        ).addTo(map);
+
+      geometryLayer.eachLayer(part => {
+
+        part.bindTooltip(
+          buildHoverInfo(item),
+          {
+            direction: 'auto',
+            offset: [0, 0],
+            opacity: 1,
+            sticky: true,
+            interactive: false,
+            className:
+              'object-hover-tooltip'
+          }
+        );
+
+        part.on(
+          'mouseover',
+          () => {
+            if (
+              typeof part.setStyle === 'function'
+            ) {
+              part.setStyle({
+                weight: 6
+              });
+            }
+          }
+        );
+
+        part.on(
+          'mouseout',
+          () => {
+            if (
+              typeof part.setStyle === 'function'
+            ) {
+              part.setStyle({
+                weight: 4
+              });
+            }
+          }
+        );
+
+        part.on(
+          'click',
+          () => {
+
+            part.closeTooltip();
+
+            openObjectDetails(
+              item,
+              true
+            );
+
+            focusObjectOnMap(
+              item,
+              13
+            );
+          }
+        );
+      });
+
+      geometryLayer.waterObjectId =
+        item.id;
+
       layer =
+        geometryLayer;
+
+    } else {
+
+      const marker =
         L.marker([
           item.latitude,
           item.longitude
         ]).addTo(map);
+
+      marker.bindTooltip(
+        buildHoverInfo(item),
+        {
+          direction: 'auto',
+          offset: [0, 0],
+          opacity: 1,
+          sticky: false,
+          interactive: false,
+          className:
+            'object-hover-tooltip'
+        }
+      );
+
+      marker.waterObjectId =
+        item.id;
+
+      marker.on(
+        'click',
+        () => {
+
+          marker.closeTooltip();
+
+          openObjectDetails(
+            item,
+            true
+          );
+
+          focusObjectOnMap(
+            item,
+            13
+          );
+        }
+      );
+
+      layer =
+        marker;
     }
-
-
-    if (!layer) {
-      return;
-    }
-
-
-    layer.bindTooltip(
-      buildHoverInfo(item),
-      {
-        direction: 'auto',
-        offset: [0, 0],
-        opacity: 1,
-        sticky: false,
-        interactive: false,
-        className:
-          'object-hover-tooltip'
-      }
-    );
-
-
-    layer.waterObjectId =
-      item.id;
-
-
-    layer.on(
-      'click',
-      () => {
-
-        layer.closeTooltip();
-
-
-        openObjectDetails(
-          item,
-          true
-        );
-
-
-        focusObjectOnMap(
-          item,
-          13
-        );
-      }
-    );
-
 
     markers.push(layer);
   });
-
 
   document
     .getElementById(
@@ -568,11 +738,9 @@ function renderMarkers(data) {
     .textContent =
       `Քարտեզագրված՝ ${mapped.length}`;
 
-
   if (getObjectIdFromUrl()) {
     return;
   }
-
 
   if (
     data.length ===
@@ -587,7 +755,6 @@ function renderMarkers(data) {
     return;
   }
 
-
   if (mapped.length === 1) {
 
     focusObjectOnMap(
@@ -598,7 +765,6 @@ function renderMarkers(data) {
     return;
   }
 
-
   if (mapped.length > 1) {
 
     const group =
@@ -606,10 +772,8 @@ function renderMarkers(data) {
         markers
       );
 
-
     const bounds =
       group.getBounds();
-
 
     if (bounds.isValid()) {
 
@@ -1666,6 +1830,63 @@ function applyFilters() {
 
 
 /* =========================================
+   GEOMETRY
+   ========================================= */
+
+async function loadObjectGeometry(
+  objectId
+) {
+
+  const url =
+    `${SUPABASE_URL}/rest/v1/rpc/get_water_object_geometry`;
+
+
+  try {
+
+    const response =
+      await fetch(
+        url,
+        {
+          method: 'POST',
+          headers: {
+            apikey:
+              SUPABASE_KEY,
+            'Content-Type':
+              'application/json'
+          },
+          body:
+            JSON.stringify({
+              p_object_id:
+                objectId
+            })
+        }
+      );
+
+
+    if (!response.ok) {
+
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+
+    return await response.json();
+
+
+  } catch (error) {
+
+    console.error(
+      `Geometry load error for object ${objectId}:`,
+      error
+    );
+
+    return null;
+  }
+}
+
+
+/* =========================================
    LOAD OBJECTS
    ========================================= */
 
@@ -1673,7 +1894,7 @@ async function loadObjects() {
 
   const url =
     `${SUPABASE_URL}/rest/v1/water_objects` +
-    `?select=id,type,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m,geometry` +
+    `?select=id,type,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m` +
     `&order=name_hy.asc`;
 
 
@@ -1701,6 +1922,29 @@ async function loadObjects() {
 
     allObjects =
       await response.json();
+
+
+    const geometryObjects =
+      allObjects.filter(item =>
+        item.type === 'river' ||
+        (
+          item.type === 'lake' &&
+          item.name_hy === 'Սևանա լիճ'
+        )
+      );
+
+
+    await Promise.all(
+      geometryObjects.map(
+        async item => {
+
+          item.geometry =
+            await loadObjectGeometry(
+              item.id
+            );
+        }
+      )
+    );
 
 
     renderList(
