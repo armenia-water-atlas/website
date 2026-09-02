@@ -2352,6 +2352,14 @@ async function loadObjects() {
             `.type-filter[value="${item.type}"]`
           );
 
+        document
+          .querySelectorAll(
+            '.type-filter'
+          )
+          .forEach(input => {
+            input.checked = false;
+          });
+
         if (typeFilter) {
           typeFilter.checked = true;
         }
@@ -2415,7 +2423,26 @@ document
 
     input.addEventListener(
       'change',
-      applyFilters
+      () => {
+
+        // Only one object type may be active at a time.
+        // Choosing a new category automatically hides the previous one.
+        if (input.checked) {
+
+          document
+            .querySelectorAll(
+              '.type-filter'
+            )
+            .forEach(otherInput => {
+
+              if (otherInput !== input) {
+                otherInput.checked = false;
+              }
+            });
+        }
+
+        applyFilters();
+      }
     );
   });
 
