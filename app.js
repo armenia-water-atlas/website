@@ -794,6 +794,46 @@ function createWaterfallIcon() {
 }
 
 
+function createWetlandIcon() {
+
+  return L.divIcon({
+    className: 'wetland-symbol-wrapper',
+    html: `
+      <div
+        style="
+          width:24px;
+          height:24px;
+          border:2px solid #1976d2;
+          border-radius:50%;
+          background:#eef8f3;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          box-shadow:0 1px 3px rgba(0,0,0,.28);
+        "
+        aria-hidden="true"
+      >
+        <svg width="17" height="17" viewBox="0 0 17 17" xmlns="http://www.w3.org/2000/svg">
+          <!-- Wetland: reeds rising above two small water waves. -->
+          <g fill="none" stroke="#1976d2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12.2 C4.2 11.4 5.2 11.4 6.4 12.2 S8.7 13 9.9 12.2 S12.2 11.4 14 12.2" stroke-width="1.25"/>
+            <path d="M3.4 14.4 C4.6 13.7 5.7 13.7 6.9 14.4 S9.2 15.1 10.4 14.4 S12.7 13.7 13.8 14.4" stroke-width="1.25"/>
+            <path d="M6.2 11.2 L6.2 4.0 M9.0 11.5 L9.0 2.6 M11.7 11.2 L11.7 4.6" stroke-width="1.25"/>
+            <path d="M6.2 5.4 C5.0 5.0 4.6 4.3 4.5 3.6 C5.7 3.7 6.3 4.2 6.2 5.4Z" fill="#1976d2" stroke-width=".6"/>
+            <path d="M9.0 4.2 C10.2 3.8 10.7 3.1 10.8 2.4 C9.6 2.5 9.0 3.0 9.0 4.2Z" fill="#1976d2" stroke-width=".6"/>
+            <path d="M11.7 6.0 C12.8 5.6 13.3 5.0 13.4 4.3 C12.2 4.4 11.7 4.9 11.7 6.0Z" fill="#1976d2" stroke-width=".6"/>
+          </g>
+        </svg>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    tooltipAnchor: [0, -13]
+  });
+}
+
+
 function createHydropowerIcon(status) {
 
   return L.divIcon({
@@ -885,12 +925,15 @@ function renderMarkers(data) {
     const isHydropower =
       item.type === 'hydropower';
 
+    const isWetland =
+      item.type === 'wetland';
+
     const hasCoordinates =
       item.latitude !== null &&
       item.longitude !== null;
 
     if (
-      (isSmallLake || isWaterfall || isHydropower) &&
+      (isSmallLake || isWaterfall || isHydropower || isWetland) &&
       hasCoordinates
     ) {
 
@@ -906,7 +949,9 @@ function renderMarkers(data) {
                 ? createWaterfallIcon()
                 : isHydropower
                   ? createHydropowerIcon(item.status)
-                  : createLakeIcon(),
+                  : isWetland
+                    ? createWetlandIcon()
+                    : createLakeIcon(),
             zIndexOffset:
               isHydropower
                 ? 650
