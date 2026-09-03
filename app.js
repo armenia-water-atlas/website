@@ -794,6 +794,43 @@ function createWaterfallIcon() {
 }
 
 
+function createReservoirIcon(status) {
+
+  return L.divIcon({
+    className: 'reservoir-symbol-wrapper',
+    html: `
+      <div
+        style="
+          width:24px;
+          height:24px;
+          border:2px ${status === 'construction' || status === 'planned' ? 'dashed' : 'solid'} #1976d2;
+          border-radius:50%;
+          background:#ffffff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          box-shadow:0 1px 3px rgba(0,0,0,.28);
+        "
+        aria-hidden="true"
+      >
+        <svg width="17" height="17" viewBox="0 0 17 17" xmlns="http://www.w3.org/2000/svg">
+          <g fill="none" stroke="#1976d2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 4.1 H14" stroke-width="1.5"/>
+            <path d="M5.1 4.1 V10.6 M11.9 4.1 V10.6" stroke-width="1.5"/>
+            <path d="M3.1 10.3 C4.3 9.5 5.5 9.5 6.7 10.3 S9.1 11.1 10.3 10.3 S12.7 9.5 13.9 10.3" stroke-width="1.35"/>
+            <path d="M3.5 13.2 C4.7 12.4 5.9 12.4 7.1 13.2 S9.5 14 10.7 13.2 S13.1 12.4 14.1 13.2" stroke-width="1.35"/>
+          </g>
+        </svg>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    tooltipAnchor: [0, -13]
+  });
+}
+
+
 function createWetlandIcon() {
 
   return L.divIcon({
@@ -925,6 +962,9 @@ function renderMarkers(data) {
     const isHydropower =
       item.type === 'hydropower';
 
+    const isReservoir =
+      item.type === 'reservoir';
+
     const isWetland =
       item.type === 'wetland';
 
@@ -933,7 +973,7 @@ function renderMarkers(data) {
       item.longitude !== null;
 
     if (
-      (isSmallLake || isWaterfall || isHydropower || isWetland) &&
+      (isSmallLake || isWaterfall || isHydropower || isReservoir || isWetland) &&
       hasCoordinates
     ) {
 
@@ -949,13 +989,17 @@ function renderMarkers(data) {
                 ? createWaterfallIcon()
                 : isHydropower
                   ? createHydropowerIcon(item.status)
-                  : isWetland
-                    ? createWetlandIcon()
-                    : createLakeIcon(),
+                  : isReservoir
+                    ? createReservoirIcon(item.status)
+                    : isWetland
+                      ? createWetlandIcon()
+                      : createLakeIcon(),
             zIndexOffset:
               isHydropower
                 ? 650
-                : 500
+                : isReservoir
+                  ? 600
+                  : 500
           }
         ).addTo(map);
 
