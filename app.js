@@ -871,6 +871,75 @@ function createWetlandIcon() {
 }
 
 
+
+function createSpringIcon() {
+
+  return L.divIcon({
+    className: 'spring-symbol-wrapper',
+    html: `
+      <div
+        style="
+          width:24px;
+          height:24px;
+          border:2px solid #1976d2;
+          border-radius:50%;
+          background:#ffffff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          box-shadow:0 1px 3px rgba(0,0,0,.28);
+        "
+        aria-hidden="true"
+      >
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 17 17"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g
+            fill="none"
+            stroke="#1976d2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <!-- Three small water drops above a drinking cup/bowl. -->
+            <path d="M5.0 2.2 C4.45 3.0 4.15 3.45 4.15 3.9
+                     C4.15 4.4 4.52 4.8 5.0 4.8
+                     C5.48 4.8 5.85 4.4 5.85 3.9
+                     C5.85 3.45 5.55 3.0 5.0 2.2Z"
+                  fill="#1976d2" stroke-width=".45"/>
+            <path d="M8.5 1.6 C7.9 2.5 7.55 3.0 7.55 3.5
+                     C7.55 4.05 7.96 4.48 8.5 4.48
+                     C9.04 4.48 9.45 4.05 9.45 3.5
+                     C9.45 3.0 9.1 2.5 8.5 1.6Z"
+                  fill="#1976d2" stroke-width=".45"/>
+            <path d="M12.0 2.2 C11.45 3.0 11.15 3.45 11.15 3.9
+                     C11.15 4.4 11.52 4.8 12.0 4.8
+                     C12.48 4.8 12.85 4.4 12.85 3.9
+                     C12.85 3.45 12.55 3.0 12.0 2.2Z"
+                  fill="#1976d2" stroke-width=".45"/>
+
+            <!-- Cup / pedestal bowl. -->
+            <path d="M3.0 6.4 H14.0
+                     C13.55 9.2 11.65 10.8 8.5 10.8
+                     C5.35 10.8 3.45 9.2 3.0 6.4Z"
+                  stroke-width="1.25"/>
+            <path d="M8.5 10.8 V13.1" stroke-width="1.25"/>
+            <path d="M5.9 14.2 H11.1" stroke-width="1.25"/>
+            <path d="M6.8 13.1 H10.2" stroke-width="1.05"/>
+          </g>
+        </svg>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    tooltipAnchor: [0, -13]
+  });
+}
+
+
 function createHydropowerIcon(status) {
 
   return L.divIcon({
@@ -968,12 +1037,15 @@ function renderMarkers(data) {
     const isWetland =
       item.type === 'wetland';
 
+    const isSpring =
+      item.type === 'spring';
+
     const hasCoordinates =
       item.latitude !== null &&
       item.longitude !== null;
 
     if (
-      (isSmallLake || isWaterfall || isHydropower || isReservoir || isWetland) &&
+      (isSmallLake || isWaterfall || isHydropower || isReservoir || isWetland || isSpring) &&
       hasCoordinates
     ) {
 
@@ -993,13 +1065,17 @@ function renderMarkers(data) {
                     ? createReservoirIcon(item.status)
                     : isWetland
                       ? createWetlandIcon()
-                      : createLakeIcon(),
+                      : isSpring
+                        ? createSpringIcon()
+                        : createLakeIcon(),
             zIndexOffset:
               isHydropower
                 ? 650
                 : isReservoir
                   ? 600
-                  : 500
+                  : isSpring
+                    ? 580
+                    : 500
           }
         ).addTo(map);
 
@@ -2612,104 +2688,6 @@ async function loadObjects() {
         `Տվյալների ստացման սխալ՝ ${error.message}`;
   }
 }
-
-
-/* =========================================
-   RESERVOIR MENU ITEM
-   ========================================= */
-
-function ensureReservoirTypeFilter() {
-
-  if (
-    document.querySelector(
-      '.type-filter[value="reservoir"]'
-    )
-  ) {
-    return;
-  }
-
-  const existingFilters =
-    Array.from(
-      document.querySelectorAll(
-        '.type-filter'
-      )
-    );
-
-  if (!existingFilters.length) {
-    return;
-  }
-
-  // Prefer placing Reservoirs after Lakes when possible.
-  const lakeInput =
-    document.querySelector(
-      '.type-filter[value="lake"]'
-    );
-
-  const templateInput =
-    lakeInput || existingFilters[0];
-
-  const templateLabel =
-    templateInput.closest('label');
-
-  if (!templateLabel) {
-    return;
-  }
-
-  const newLabel =
-    templateLabel.cloneNode(true);
-
-  const newInput =
-    newLabel.querySelector(
-      '.type-filter'
-    );
-
-  if (!newInput) {
-    return;
-  }
-
-  newInput.value =
-    'reservoir';
-
-  newInput.checked =
-    false;
-
-  const textNodes =
-    Array.from(
-      newLabel.childNodes
-    ).filter(
-      node =>
-        node.nodeType ===
-        Node.TEXT_NODE
-    );
-
-  if (textNodes.length) {
-    textNodes[
-      textNodes.length - 1
-    ].textContent =
-      ' Ջրամբարներ';
-  } else {
-    const visibleText =
-      newLabel.querySelector('span');
-
-    if (visibleText) {
-      visibleText.textContent =
-        'Ջրամբարներ';
-    } else {
-      newLabel.append(
-        document.createTextNode(
-          ' Ջրամբարներ'
-        )
-      );
-    }
-  }
-
-  templateLabel.parentElement.insertBefore(
-    newLabel,
-    templateLabel.nextSibling
-  );
-}
-
-ensureReservoirTypeFilter();
 
 
 /* =========================================
