@@ -2615,6 +2615,104 @@ async function loadObjects() {
 
 
 /* =========================================
+   RESERVOIR MENU ITEM
+   ========================================= */
+
+function ensureReservoirTypeFilter() {
+
+  if (
+    document.querySelector(
+      '.type-filter[value="reservoir"]'
+    )
+  ) {
+    return;
+  }
+
+  const existingFilters =
+    Array.from(
+      document.querySelectorAll(
+        '.type-filter'
+      )
+    );
+
+  if (!existingFilters.length) {
+    return;
+  }
+
+  // Prefer placing Reservoirs after Lakes when possible.
+  const lakeInput =
+    document.querySelector(
+      '.type-filter[value="lake"]'
+    );
+
+  const templateInput =
+    lakeInput || existingFilters[0];
+
+  const templateLabel =
+    templateInput.closest('label');
+
+  if (!templateLabel) {
+    return;
+  }
+
+  const newLabel =
+    templateLabel.cloneNode(true);
+
+  const newInput =
+    newLabel.querySelector(
+      '.type-filter'
+    );
+
+  if (!newInput) {
+    return;
+  }
+
+  newInput.value =
+    'reservoir';
+
+  newInput.checked =
+    false;
+
+  const textNodes =
+    Array.from(
+      newLabel.childNodes
+    ).filter(
+      node =>
+        node.nodeType ===
+        Node.TEXT_NODE
+    );
+
+  if (textNodes.length) {
+    textNodes[
+      textNodes.length - 1
+    ].textContent =
+      ' Ջրամբարներ';
+  } else {
+    const visibleText =
+      newLabel.querySelector('span');
+
+    if (visibleText) {
+      visibleText.textContent =
+        'Ջրամբարներ';
+    } else {
+      newLabel.append(
+        document.createTextNode(
+          ' Ջրամբարներ'
+        )
+      );
+    }
+  }
+
+  templateLabel.parentElement.insertBefore(
+    newLabel,
+    templateLabel.nextSibling
+  );
+}
+
+ensureReservoirTypeFilter();
+
+
+/* =========================================
    HYDROPOWER MENU ITEM
    ========================================= */
 
