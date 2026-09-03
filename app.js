@@ -794,7 +794,7 @@ function createWaterfallIcon() {
 }
 
 
-function createHydropowerIcon() {
+function createHydropowerIcon(status) {
 
   return L.divIcon({
     className: 'hydropower-symbol-wrapper',
@@ -803,7 +803,7 @@ function createHydropowerIcon() {
         style="
           width:24px;
           height:24px;
-          border:2px solid #1976d2;
+          border:2px ${status === 'construction' ? 'dashed' : 'solid'} #1976d2;
           border-radius:50%;
           background:#ffffff;
           display:flex;
@@ -905,7 +905,7 @@ function renderMarkers(data) {
               isWaterfall
                 ? createWaterfallIcon()
                 : isHydropower
-                  ? createHydropowerIcon()
+                  ? createHydropowerIcon(item.status)
                   : createLakeIcon(),
             zIndexOffset:
               isHydropower
