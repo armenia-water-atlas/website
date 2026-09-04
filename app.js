@@ -872,6 +872,43 @@ function createWetlandIcon() {
 
 
 
+function createCanalIcon() {
+
+  return L.divIcon({
+    className: 'canal-symbol-wrapper',
+    html: `
+      <div
+        style="
+          width:24px;
+          height:24px;
+          border:2px solid #1976d2;
+          border-radius:50%;
+          background:#ffffff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          box-shadow:0 1px 3px rgba(0,0,0,.28);
+        "
+        aria-hidden="true"
+      >
+        <svg width="17" height="17" viewBox="0 0 17 17" xmlns="http://www.w3.org/2000/svg">
+          <g fill="none" stroke="#1976d2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.1 4.4 C5.0 3.2 7.2 5.2 10.0 4.5 C12.0 4.0 13.5 3.2 14.9 2.8" stroke-width="1.25"/>
+            <path d="M2.1 12.6 C5.0 11.4 7.2 13.4 10.0 12.7 C12.0 12.2 13.5 11.4 14.9 11.0" stroke-width="1.25"/>
+            <path d="M3.4 8.5 C5.0 7.5 6.1 7.5 7.1 8.4 C8.0 9.2 9.0 9.1 10.2 8.3 H12.2" stroke-width="1.35"/>
+            <path d="M11.1 6.9 L13.8 8.3 L11.1 9.7 Z" fill="#1976d2" stroke-width="0.7"/>
+          </g>
+        </svg>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    tooltipAnchor: [0, -13]
+  });
+}
+
+
 function createSpringIcon() {
 
   return L.divIcon({
@@ -1037,6 +1074,9 @@ function renderMarkers(data) {
     const isWetland =
       item.type === 'wetland';
 
+    const isCanal =
+      item.type === 'canal';
+
     const isSpring =
       item.type === 'spring';
 
@@ -1045,7 +1085,7 @@ function renderMarkers(data) {
       item.longitude !== null;
 
     if (
-      (isSmallLake || isWaterfall || isHydropower || isReservoir || isWetland || isSpring) &&
+      (isSmallLake || isWaterfall || isHydropower || isReservoir || isWetland || isCanal || isSpring) &&
       hasCoordinates
     ) {
 
@@ -1065,9 +1105,11 @@ function renderMarkers(data) {
                     ? createReservoirIcon(item.status)
                     : isWetland
                       ? createWetlandIcon()
-                      : isSpring
-                        ? createSpringIcon()
-                        : createLakeIcon(),
+                      : isCanal
+                        ? createCanalIcon()
+                        : isSpring
+                          ? createSpringIcon()
+                          : createLakeIcon(),
             zIndexOffset:
               isHydropower
                 ? 650
@@ -1075,7 +1117,9 @@ function renderMarkers(data) {
                   ? 600
                   : isSpring
                     ? 580
-                    : 500
+                    : isCanal
+                      ? 570
+                      : 500
           }
         ).addTo(map);
 
