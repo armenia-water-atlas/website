@@ -2480,16 +2480,29 @@ function applyFilters() {
     getSelectedTypes();
 
 
-  // Thematic layers are cumulative: every checked object type stays visible.
-  const layerObjects =
+  // Thematic layers are cumulative: every checked object type stays active.
+  // When a search term is present, it also narrows the objects drawn from
+  // those active layers. Example: search "Հրազդան" + check "Գետեր"
+  // => show only the matching Hrazdan river, not every river.
+  const activeLayerObjects =
     getActiveLayerObjects(
       selectedTypes
     );
 
 
+  const layerObjects =
+    activeLayerObjects.filter(
+      item =>
+        !search ||
+        (item.name_hy || '')
+          .toLowerCase()
+          .includes(search)
+    );
+
+
   // Explicitly opened objects remain on the map even when their category is
-  // not currently checked. This is the key to the step-by-step exploration
-  // model (e.g. keep Sevan visible, then add rivers, then hydropower plants).
+  // not currently checked. Search affects thematic layers, but does not
+  // silently remove objects the user explicitly opened/pinned.
   const pinnedObjects =
     getPinnedObjects();
 
@@ -2501,8 +2514,8 @@ function applyFilters() {
     );
 
 
-  // Search narrows the side list only. It does not remove already selected
-  // layers or pinned objects from the map.
+  // The side list follows the search text. Unrelated pinned objects may stay
+  // on the map, but are not shown as search results.
   const listObjects =
     mapObjects.filter(
       item =>
