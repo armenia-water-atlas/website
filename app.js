@@ -836,6 +836,51 @@ function createReservoirIcon(status) {
 }
 
 
+function createCanalIcon() {
+
+  return L.divIcon({
+    className: 'canal-symbol-wrapper',
+    html: `
+      <div
+        style="
+          width:24px;
+          height:24px;
+          border:2px solid #1976d2;
+          border-radius:50%;
+          background:#ffffff;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          box-sizing:border-box;
+          box-shadow:0 1px 3px rgba(0,0,0,.28);
+        "
+        aria-hidden="true"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 18 18"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <!-- Canal: pipe outlet with water flowing from it. -->
+          <g stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.0" y="3.1" width="7.2" height="6.0" rx="1.6" fill="#7a8491" stroke="#5d6672" stroke-width="1"/>
+            <ellipse cx="9.2" cy="6.1" rx="2.1" ry="3.0" fill="#ffffff" stroke="#5d6672" stroke-width="1.15"/>
+            <path d="M9.8 8.0 C11.2 8.6 11.8 9.4 11.9 11.1 C12.0 12.0 12.6 12.5 13.7 12.8" fill="none" stroke="#2496ff" stroke-width="1.65"/>
+            <path d="M11.4 8.1 C12.9 8.8 13.5 9.8 13.6 11.2 C13.7 12.0 14.3 12.5 15.4 12.7" fill="none" stroke="#2496ff" stroke-width="1.65"/>
+            <path d="M8.7 13.9 C9.7 13.3 10.7 13.3 11.7 13.9 S13.7 14.5 14.7 13.9 S16.1 13.4 16.6 13.7" fill="none" stroke="#1976d2" stroke-width="1.2"/>
+            <path d="M9.2 15.6 C10.2 15.0 11.2 15.0 12.2 15.6 S14.2 16.2 15.2 15.6" fill="none" stroke="#1976d2" stroke-width="1.2"/>
+          </g>
+        </svg>
+      </div>
+    `,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    tooltipAnchor: [0, -13]
+  });
+}
+
+
 function createWetlandIcon() {
 
   return L.divIcon({
@@ -1039,6 +1084,9 @@ function renderMarkers(data) {
     const isReservoir =
       item.type === 'reservoir';
 
+    const isCanal =
+      item.type === 'canal';
+
     const isWetland =
       item.type === 'wetland';
 
@@ -1050,7 +1098,7 @@ function renderMarkers(data) {
       item.longitude !== null;
 
     if (
-      (isSmallLake || isWaterfall || isHydropower || isReservoir || isWetland || isSpring) &&
+      (isSmallLake || isWaterfall || isHydropower || isReservoir || isCanal || isWetland || isSpring) &&
       hasCoordinates
     ) {
 
@@ -1068,7 +1116,9 @@ function renderMarkers(data) {
                   ? createHydropowerIcon(item.status)
                   : isReservoir
                     ? createReservoirIcon(item.status)
-                    : isWetland
+                    : isCanal
+                      ? createCanalIcon()
+                      : isWetland
                       ? createWetlandIcon()
                       : isSpring
                         ? createSpringIcon()
@@ -1078,7 +1128,9 @@ function renderMarkers(data) {
                 ? 650
                 : isReservoir
                   ? 600
-                  : isSpring
+                  : isCanal
+                    ? 590
+                    : isSpring
                     ? 580
                     : 500
           }
@@ -2463,78 +2515,45 @@ function mergeObjectsById(
 
 function showSearchEmptyMessage() {
 
-  const mapContainer =
-    document.getElementById(
-      'map'
-    );
+  const mapContainer = document.getElementById('map');
+  if (!mapContainer) return;
 
-  if (!mapContainer) {
-    return;
-  }
-
-
-  let message =
-    document.getElementById(
-      'map-search-empty-message'
-    );
-
+  let message = document.getElementById('map-search-empty-message');
 
   if (!message) {
+    message = document.createElement('div');
+    message.id = 'map-search-empty-message';
+    message.textContent = 'Որոնման արդյունքում ոչինչ չգտնվեց։';
 
-    message =
-      document.createElement(
-        'div'
-      );
+    Object.assign(message.style, {
+      position: 'absolute',
+      left: '50%',
+      top: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: '1000',
+      background: 'rgba(255, 255, 255, 0.94)',
+      border: '1px solid rgba(0, 0, 0, 0.18)',
+      borderRadius: '10px',
+      padding: '12px 18px',
+      boxShadow: '0 4px 14px rgba(0, 0, 0, 0.16)',
+      fontSize: '16px',
+      fontWeight: '600',
+      lineHeight: '1.4',
+      textAlign: 'center',
+      pointerEvents: 'none',
+      maxWidth: '80%'
+    });
 
-    message.id =
-      'map-search-empty-message';
-
-    message.textContent =
-      'Որոնման արդյունքում ոչինչ չգտնվեց։';
-
-    // Keep styling here so this change does not require editing style.css.
-    Object.assign(
-      message.style,
-      {
-        position: 'absolute',
-        left: '50%',
-        top: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: '1000',
-        background: 'rgba(255, 255, 255, 0.94)',
-        border: '1px solid rgba(0, 0, 0, 0.18)',
-        borderRadius: '10px',
-        padding: '12px 18px',
-        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.16)',
-        fontSize: '16px',
-        fontWeight: '600',
-        lineHeight: '1.4',
-        textAlign: 'center',
-        pointerEvents: 'none',
-        maxWidth: '80%'
-      }
-    );
-
-    mapContainer.appendChild(
-      message
-    );
+    mapContainer.appendChild(message);
   }
-
 
   message.hidden = false;
 }
 
 
 function hideSearchEmptyMessage() {
-
-  const message =
-    document.getElementById(
-      'map-search-empty-message'
-    );
-
-  if (message) {
-    message.hidden = true;
-  }
+  const message = document.getElementById('map-search-empty-message');
+  if (message) message.hidden = true;
 }
 
 
@@ -2558,15 +2577,9 @@ function applyFilters() {
 
 
   // Thematic layers are cumulative: every checked object type stays active.
-  //
-  // Search has an "all objects" fallback:
-  // - if no layer is selected and the user types a search term, search across
-  //   every imported object immediately (same object pool as "Ցուցադրել բոլորը");
-  // - if one or more layers are selected, search only inside those layers.
-  //
-  // Example:
-  //   search "Հրազդան" -> immediately show every matching object;
-  //   then check "Գետեր" -> narrow the same search to matching rivers only.
+  // When a search term is present, it also narrows the objects drawn from
+  // those active layers. Example: search "Հրազդան" + check "Գետեր"
+  // => show only the matching Hrazdan river, not every river.
   const activeLayerObjects =
     (
       search &&
