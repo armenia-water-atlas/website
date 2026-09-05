@@ -86,6 +86,11 @@ let markers = [];
 let smallLakeCollisionMarkers = [];
 let smallLakeConnectorLines = [];
 
+// Objects explicitly opened by the user stay visible while additional
+// thematic layers are switched on. This enables a gradual workflow such as:
+// Սևանա լիճ -> Գետեր -> ՀԷԿ-եր -> Ջրամբարներ, without losing the lake.
+const pinnedObjectIds = new Set();
+
 
 /* =========================================
    HELPERS
@@ -872,43 +877,6 @@ function createWetlandIcon() {
 
 
 
-function createCanalIcon() {
-
-  return L.divIcon({
-    className: 'canal-symbol-wrapper',
-    html: `
-      <div
-        style="
-          width:24px;
-          height:24px;
-          border:2px solid #1976d2;
-          border-radius:50%;
-          background:#ffffff;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          box-sizing:border-box;
-          box-shadow:0 1px 3px rgba(0,0,0,.28);
-        "
-        aria-hidden="true"
-      >
-        <svg width="17" height="17" viewBox="0 0 17 17" xmlns="http://www.w3.org/2000/svg">
-          <g fill="none" stroke="#1976d2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M2.1 4.4 C5.0 3.2 7.2 5.2 10.0 4.5 C12.0 4.0 13.5 3.2 14.9 2.8" stroke-width="1.25"/>
-            <path d="M2.1 12.6 C5.0 11.4 7.2 13.4 10.0 12.7 C12.0 12.2 13.5 11.4 14.9 11.0" stroke-width="1.25"/>
-            <path d="M3.4 8.5 C5.0 7.5 6.1 7.5 7.1 8.4 C8.0 9.2 9.0 9.1 10.2 8.3 H12.2" stroke-width="1.35"/>
-            <path d="M11.1 6.9 L13.8 8.3 L11.1 9.7 Z" fill="#1976d2" stroke-width="0.7"/>
-          </g>
-        </svg>
-      </div>
-    `,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    tooltipAnchor: [0, -13]
-  });
-}
-
-
 function createSpringIcon() {
 
   return L.divIcon({
@@ -1074,9 +1042,6 @@ function renderMarkers(data) {
     const isWetland =
       item.type === 'wetland';
 
-    const isCanal =
-      item.type === 'canal';
-
     const isSpring =
       item.type === 'spring';
 
@@ -1085,7 +1050,7 @@ function renderMarkers(data) {
       item.longitude !== null;
 
     if (
-      (isSmallLake || isWaterfall || isHydropower || isReservoir || isWetland || isCanal || isSpring) &&
+      (isSmallLake || isWaterfall || isHydropower || isReservoir || isWetland || isSpring) &&
       hasCoordinates
     ) {
 
@@ -1105,11 +1070,9 @@ function renderMarkers(data) {
                     ? createReservoirIcon(item.status)
                     : isWetland
                       ? createWetlandIcon()
-                      : isCanal
-                        ? createCanalIcon()
-                        : isSpring
-                          ? createSpringIcon()
-                          : createLakeIcon(),
+                      : isSpring
+                        ? createSpringIcon()
+                        : createLakeIcon(),
             zIndexOffset:
               isHydropower
                 ? 650
@@ -1117,9 +1080,7 @@ function renderMarkers(data) {
                   ? 600
                   : isSpring
                     ? 580
-                    : isCanal
-                      ? 570
-                      : 500
+                    : 500
           }
         ).addTo(map);
 
@@ -1435,6 +1396,14 @@ function renderList(data) {
       () => {
 
         closeAllTooltips();
+
+
+        pinnedObjectIds.add(
+          Number(item.id)
+        );
+
+
+        applyFilters();
 
 
         openObjectDetails(
@@ -2438,13 +2407,70 @@ function getSelectedTypes() {
 }
 
 
+function getPinnedObjects() {
+
+  return allObjects.filter(
+    item =>
+      pinnedObjectIds.has(
+        Number(item.id)
+      )
+  );
+}
+
+
+function getActiveLayerObjects(
+  selectedTypes
+) {
+
+  return allObjects.filter(
+    item =>
+      selectedTypes.includes(
+        item.type
+      )
+  );
+}
+
+
+function mergeObjectsById(
+  ...groups
+) {
+
+  const byId =
+    new Map();
+
+
+  groups
+    .flat()
+    .forEach(item => {
+
+      if (!item) {
+        return;
+      }
+
+
+      byId.set(
+        Number(item.id),
+        item
+      );
+    });
+
+
+  return Array.from(
+    byId.values()
+  );
+}
+
+
 function applyFilters() {
 
+  const searchInput =
+    document.getElementById(
+      'search'
+    );
+
+
   const search =
-    document
-      .getElementById(
-        'search'
-      )
+    searchInput
       .value
       .trim()
       .toLowerCase();
@@ -2454,51 +2480,81 @@ function applyFilters() {
     getSelectedTypes();
 
 
-  const filtered =
-    allObjects.filter(
-      item => {
-
-        const matchesSearch =
-          !search ||
-          (item.name_hy || '')
-            .toLowerCase()
-            .includes(search);
+  // Thematic layers are cumulative: every checked object type stays visible.
+  const layerObjects =
+    getActiveLayerObjects(
+      selectedTypes
+    );
 
 
-        const matchesType =
-          selectedTypes.includes(
-            item.type
-          );
+  // Explicitly opened objects remain on the map even when their category is
+  // not currently checked. This is the key to the step-by-step exploration
+  // model (e.g. keep Sevan visible, then add rivers, then hydropower plants).
+  const pinnedObjects =
+    getPinnedObjects();
 
 
-        return (
-          matchesSearch &&
-          matchesType
-        );
-      }
+  const mapObjects =
+    mergeObjectsById(
+      layerObjects,
+      pinnedObjects
+    );
+
+
+  // Search narrows the side list only. It does not remove already selected
+  // layers or pinned objects from the map.
+  const listObjects =
+    mapObjects.filter(
+      item =>
+        !search ||
+        (item.name_hy || '')
+          .toLowerCase()
+          .includes(search)
     );
 
 
   renderList(
-    filtered
+    listObjects
   );
 
 
   renderMarkers(
-    filtered
+    mapObjects
   );
 
 
-  document
-    .getElementById(
+  const status =
+    document.getElementById(
       'status'
-    )
-    .textContent =
-      selectedTypes.length === 0
-        ? 'Ընտրեք օբյեկտի տեսակ մենյուից։'
-        : `Ցուցադրվում է ${filtered.length} օբյեկտ՝ ընդհանուր ${allObjects.length}-ից։`;
-}
+    );
 
+
+  if (
+    selectedTypes.length === 0 &&
+    pinnedObjects.length === 0
+  ) {
+
+    status.textContent =
+      'Ընտրեք մեկ կամ մի քանի շերտ, կամ բացեք որևէ օբյեկտ։';
+
+  } else {
+
+    const layerLabel =
+      selectedTypes.length
+        ? `Միացված է ${selectedTypes.length} շերտ`
+        : 'Շերտեր միացված չեն';
+
+
+    const pinnedLabel =
+      pinnedObjects.length
+        ? `, ընտրված է ${pinnedObjects.length} օբյեկտ`
+        : '';
+
+
+    status.textContent =
+      `${layerLabel}${pinnedLabel}։ Քարտեզում՝ ${mapObjects.length} օբյեկտ։`;
+  }
+}
 
 /* =========================================
    GEOMETRY
@@ -2653,7 +2709,7 @@ async function loadObjects() {
         'status'
       )
       .textContent =
-        'Ընտրեք օբյեկտի տեսակ մենյուից։';
+        'Ընտրեք մեկ կամ մի քանի շերտ, կամ բացեք որևէ օբյեկտ։';
 
 
     const initialId =
@@ -2680,32 +2736,12 @@ async function loadObjects() {
 
       if (item) {
 
-        const typeFilter =
-          document.querySelector(
-            `.type-filter[value="${item.type}"]`
-          );
-
-        document
-          .querySelectorAll(
-            '.type-filter'
-          )
-          .forEach(input => {
-            input.checked = false;
-          });
-
-        if (typeFilter) {
-          typeFilter.checked = true;
-        }
-
-
-        renderList(
-          [item]
+        pinnedObjectIds.add(
+          Number(item.id)
         );
 
 
-        renderMarkers(
-          [item]
-        );
+        applyFilters();
 
 
         focusObjectOnMap(
@@ -2850,6 +2886,210 @@ ensureHydropowerTypeFilter();
 
 
 /* =========================================
+   CUMULATIVE LAYER CONTROLS
+   ========================================= */
+
+function ensureLayerControls() {
+
+  if (
+    document.getElementById(
+      'water-layer-controls'
+    )
+  ) {
+    return;
+  }
+
+
+  const filters =
+    Array.from(
+      document.querySelectorAll(
+        '.type-filter'
+      )
+    );
+
+
+  if (!filters.length) {
+    return;
+  }
+
+
+  const lastLabel =
+    filters[
+      filters.length - 1
+    ].closest('label');
+
+
+  if (
+    !lastLabel ||
+    !lastLabel.parentElement
+  ) {
+    return;
+  }
+
+
+  const controls =
+    document.createElement(
+      'div'
+    );
+
+
+  controls.id =
+    'water-layer-controls';
+
+
+  controls.style.display =
+    'flex';
+
+  controls.style.gap =
+    '6px';
+
+  controls.style.flexWrap =
+    'wrap';
+
+  controls.style.marginTop =
+    '10px';
+
+
+  const allButton =
+    document.createElement(
+      'button'
+    );
+
+
+  allButton.type =
+    'button';
+
+  allButton.textContent =
+    'Ցուցադրել բոլորը';
+
+  allButton.title =
+    'Միացնել բոլոր ջրային օբյեկտների շերտերը';
+
+
+  const clearButton =
+    document.createElement(
+      'button'
+    );
+
+
+  clearButton.type =
+    'button';
+
+  clearButton.textContent =
+    'Մաքրել քարտեզը';
+
+  clearButton.title =
+    'Անջատել բոլոր շերտերը և հանել ընտրված օբյեկտները';
+
+
+  [allButton, clearButton]
+    .forEach(button => {
+
+      button.style.padding =
+        '6px 9px';
+
+      button.style.border =
+        '1px solid #c7d2e0';
+
+      button.style.borderRadius =
+        '7px';
+
+      button.style.background =
+        '#ffffff';
+
+      button.style.cursor =
+        'pointer';
+
+      button.style.fontSize =
+        '12px';
+    });
+
+
+  allButton.addEventListener(
+    'click',
+    () => {
+
+      document
+        .querySelectorAll(
+          '.type-filter'
+        )
+        .forEach(input => {
+          input.checked = true;
+        });
+
+
+      applyFilters();
+    }
+  );
+
+
+  clearButton.addEventListener(
+    'click',
+    () => {
+
+      document
+        .querySelectorAll(
+          '.type-filter'
+        )
+        .forEach(input => {
+          input.checked = false;
+        });
+
+
+      pinnedObjectIds.clear();
+
+
+      const searchInput =
+        document.getElementById(
+          'search'
+        );
+
+
+      if (searchInput) {
+        searchInput.value = '';
+      }
+
+
+      applyFilters();
+
+
+      map.fitBounds(
+        ARMENIA_BOUNDS,
+        {
+          padding: [24, 24],
+          maxZoom: 8
+        }
+      );
+
+
+      closeObjectDetails(
+        true
+      );
+    }
+  );
+
+
+  controls.appendChild(
+    allButton
+  );
+
+
+  controls.appendChild(
+    clearButton
+  );
+
+
+  lastLabel.parentElement.insertBefore(
+    controls,
+    lastLabel.nextSibling
+  );
+}
+
+
+ensureLayerControls();
+
+
+/* =========================================
    EVENTS
    ========================================= */
 
@@ -2873,22 +3113,8 @@ document
       'change',
       () => {
 
-        // Only one object type may be active at a time.
-        // Choosing a new category automatically hides the previous one.
-        if (input.checked) {
-
-          document
-            .querySelectorAll(
-              '.type-filter'
-            )
-            .forEach(otherInput => {
-
-              if (otherInput !== input) {
-                otherInput.checked = false;
-              }
-            });
-        }
-
+        // Multiple object types may be active simultaneously.
+        // Checking a new layer never hides the layers that are already on.
         applyFilters();
       }
     );
@@ -2937,6 +3163,14 @@ window.addEventListener(
     if (!item) {
       return;
     }
+
+
+    pinnedObjectIds.add(
+      Number(item.id)
+    );
+
+
+    applyFilters();
 
 
     focusObjectOnMap(
