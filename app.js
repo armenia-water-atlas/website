@@ -1099,7 +1099,8 @@ function renderMarkers(data) {
 
     if (
       (isSmallLake || isWaterfall || isHydropower || isReservoir || isCanal || isWetland || isSpring) &&
-      hasCoordinates
+      hasCoordinates &&
+      !(isCanal && item.geometry)
     ) {
 
       const marker =
@@ -1319,6 +1320,65 @@ function renderMarkers(data) {
 
         markers.push(
           sevanMarker
+        );
+      }
+
+      // Canals with a real LineString geometry keep both representations:
+      // the blue polyline for the actual route and the conventional canal
+      // symbol at the representative latitude/longitude.
+      if (
+        isCanal &&
+        hasCoordinates
+      ) {
+
+        const canalMarker =
+          L.marker(
+            [
+              item.latitude,
+              item.longitude
+            ],
+            {
+              icon: createCanalIcon(),
+              zIndexOffset: 590
+            }
+          ).addTo(map);
+
+        canalMarker.bindTooltip(
+          buildHoverInfo(item),
+          {
+            direction: 'auto',
+            offset: [0, 0],
+            opacity: 1,
+            sticky: false,
+            interactive: false,
+            className:
+              'object-hover-tooltip'
+          }
+        );
+
+        canalMarker.waterObjectId =
+          item.id;
+
+        canalMarker.on(
+          'click',
+          () => {
+
+            canalMarker.closeTooltip();
+
+            openObjectDetails(
+              item,
+              true
+            );
+
+            focusObjectOnMap(
+              item,
+              13
+            );
+          }
+        );
+
+        markers.push(
+          canalMarker
         );
       }
 
