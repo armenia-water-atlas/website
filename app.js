@@ -2787,6 +2787,7 @@ async function loadObjects() {
     const geometryObjects =
       allObjects.filter(item =>
         item.type === 'river' ||
+        item.type === 'canal' ||
         (
           item.type === 'lake' &&
           item.name_hy === 'Սևանա լիճ'
