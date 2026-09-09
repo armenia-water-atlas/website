@@ -22,6 +22,32 @@
     rel="stylesheet"
     href="style.css"
   >
+
+  <!-- Region selector styles -->
+  <style>
+    .region-box {
+      margin-top: 12px;
+    }
+
+    .region-box select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid #c7d2e0;
+      border-radius: 8px;
+      background: #ffffff;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .region-box select:focus {
+      outline: 2px solid rgba(36, 124, 114, 0.18);
+      outline-offset: 1px;
+      border-color: #247c72;
+    }
+  </style>
+
 </head>
 
 
@@ -68,6 +94,34 @@
         placeholder="Օրինակ՝ Շաքի"
         autocomplete="off"
       >
+
+    </div>
+
+    <!-- REGION -->
+
+    <div class="search-box region-box">
+
+      <label for="region-filter">
+        Տարածք
+      </label>
+
+      <select
+        id="region-filter"
+        aria-label="Ընտրել տարածքը"
+      >
+        <option value="Հայաստան" selected>Հայաստան</option>
+        <option value="Երևան">Երևան</option>
+        <option value="Արագածոտն">Արագածոտն</option>
+        <option value="Արարատ">Արարատ</option>
+        <option value="Արմավիր">Արմավիր</option>
+        <option value="Գեղարքունիք">Գեղարքունիք</option>
+        <option value="Կոտայք">Կոտայք</option>
+        <option value="Լոռի">Լոռի</option>
+        <option value="Շիրակ">Շիրակ</option>
+        <option value="Սյունիք">Սյունիք</option>
+        <option value="Տավուշ">Տավուշ</option>
+        <option value="Վայոց ձոր">Վայոց ձոր</option>
+      </select>
 
     </div>
 
