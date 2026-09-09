@@ -1187,15 +1187,29 @@ function renderMarkers(data) {
 
     } else if (item.geometry) {
 
+      // Rivers and canals must remain visually distinct on the Atlas map.
+      // Canals use a narrower dashed blue-green line; rivers keep the
+      // established solid blue line.
+      const geometryStyle =
+        isCanal
+          ? {
+              color: '#00838f',
+              weight: 3,
+              opacity: 0.95,
+              dashArray: '8 6',
+              lineCap: 'butt'
+            }
+          : {
+              color: '#1976d2',
+              weight: 4,
+              opacity: 0.9
+            };
+
       const geometryLayer =
         L.geoJSON(
           item.geometry,
           {
-            style: {
-              color: '#1976d2',
-              weight: 4,
-              opacity: 0.9
-            }
+            style: geometryStyle
           }
         ).addTo(map);
 
@@ -1221,7 +1235,8 @@ function renderMarkers(data) {
               typeof part.setStyle === 'function'
             ) {
               part.setStyle({
-                weight: 6
+                ...geometryStyle,
+                weight: geometryStyle.weight + 2
               });
             }
           }
@@ -1233,9 +1248,9 @@ function renderMarkers(data) {
             if (
               typeof part.setStyle === 'function'
             ) {
-              part.setStyle({
-                weight: 4
-              });
+              part.setStyle(
+                geometryStyle
+              );
             }
           }
         );
@@ -1323,64 +1338,8 @@ function renderMarkers(data) {
         );
       }
 
-      // Canals with a real LineString geometry keep both representations:
-      // the blue polyline for the actual route and the conventional canal
-      // symbol at the representative latitude/longitude.
-      if (
-        isCanal &&
-        hasCoordinates
-      ) {
-
-        const canalMarker =
-          L.marker(
-            [
-              item.latitude,
-              item.longitude
-            ],
-            {
-              icon: createCanalIcon(),
-              zIndexOffset: 590
-            }
-          ).addTo(map);
-
-        canalMarker.bindTooltip(
-          buildHoverInfo(item),
-          {
-            direction: 'auto',
-            offset: [0, 0],
-            opacity: 1,
-            sticky: false,
-            interactive: false,
-            className:
-              'object-hover-tooltip'
-          }
-        );
-
-        canalMarker.waterObjectId =
-          item.id;
-
-        canalMarker.on(
-          'click',
-          () => {
-
-            canalMarker.closeTooltip();
-
-            openObjectDetails(
-              item,
-              true
-            );
-
-            focusObjectOnMap(
-              item,
-              13
-            );
-          }
-        );
-
-        markers.push(
-          canalMarker
-        );
-      }
+      // Geometry-bearing canals are represented by their real polyline only.
+      // Their representative latitude/longitude marker is intentionally omitted.
 
     } else {
 
