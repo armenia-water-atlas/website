@@ -2478,6 +2478,98 @@ function getSelectedTypes() {
 }
 
 
+function getSelectedRegion() {
+
+  const regionFilter =
+    document.getElementById(
+      'region-filter'
+    );
+
+
+  return regionFilter
+    ? regionFilter.value
+    : 'Հայաստան';
+}
+
+
+function matchesSelectedRegion(
+  item,
+  selectedRegion = getSelectedRegion()
+) {
+
+  if (
+    !selectedRegion ||
+    selectedRegion === 'Հայաստան'
+  ) {
+    return true;
+  }
+
+
+  const provinceText =
+    String(
+      item.province || ''
+    )
+      .replace(/\s+/g, ' ')
+      .trim();
+
+
+  if (!provinceText) {
+    return false;
+  }
+
+
+  // The province field may contain more than one territory, for example
+  // "Երևան, Արարատ". Substring matching also covers forms such as
+  // "Արարատի մարզ" and "Վայոց ձորի մարզ".
+  return provinceText.includes(
+    selectedRegion
+  );
+}
+
+
+function getRegionScopedObjects(
+  selectedRegion = getSelectedRegion()
+) {
+
+  return allObjects.filter(
+    item =>
+      matchesSelectedRegion(
+        item,
+        selectedRegion
+      )
+  );
+}
+
+
+function trimPinnedObjectsToRegion(
+  selectedRegion = getSelectedRegion()
+) {
+
+  Array.from(
+    pinnedObjectIds
+  ).forEach(objectId => {
+
+    const item =
+      findObjectById(
+        objectId
+      );
+
+
+    if (
+      !item ||
+      !matchesSelectedRegion(
+        item,
+        selectedRegion
+      )
+    ) {
+      pinnedObjectIds.delete(
+        Number(objectId)
+      );
+    }
+  });
+}
+
+
 function getPinnedObjects() {
 
   return allObjects.filter(
@@ -2595,18 +2687,31 @@ function applyFilters() {
     getSelectedTypes();
 
 
-  // Thematic layers are cumulative: every checked object type stays active.
-  // When a search term is present, it also narrows the objects drawn from
-  // those active layers. Example: search "Հրազդան" + check "Գետեր"
-  // => show only the matching Hrazdan river, not every river.
+  const selectedRegion =
+    getSelectedRegion();
+
+
+  const regionObjects =
+    getRegionScopedObjects(
+      selectedRegion
+    );
+
+
+  // The region selector is a hard geographic scope. Thematic layers and
+  // search both operate only inside that scope. When no type is checked but
+  // the user types a search term, search runs across every object type in
+  // the selected territory.
   const activeLayerObjects =
     (
       search &&
       selectedTypes.length === 0
     )
-      ? allObjects
-      : getActiveLayerObjects(
-          selectedTypes
+      ? regionObjects
+      : regionObjects.filter(
+          item =>
+            selectedTypes.includes(
+              item.type
+            )
         );
 
 
@@ -2620,11 +2725,17 @@ function applyFilters() {
     );
 
 
-  // Explicitly opened objects remain on the map even when their category is
-  // not currently checked. Search affects thematic layers, but does not
-  // silently remove objects the user explicitly opened/pinned.
+  // Explicitly opened objects remain pinned only while they belong to the
+  // currently selected territory. Changing from Armenia to a marz must not
+  // leave unrelated objects from another marz on the map.
   const pinnedObjects =
-    getPinnedObjects();
+    getPinnedObjects().filter(
+      item =>
+        matchesSelectedRegion(
+          item,
+          selectedRegion
+        )
+    );
 
 
   const mapObjects =
@@ -2634,15 +2745,20 @@ function applyFilters() {
     );
 
 
-  // The side list follows the search text. Unrelated pinned objects may stay
-  // on the map, but are not shown as search results.
+  // The side list follows the same territory + search scope.
   const listObjects =
     mapObjects.filter(
       item =>
-        !search ||
-        (item.name_hy || '')
-          .toLowerCase()
-          .includes(search)
+        matchesSelectedRegion(
+          item,
+          selectedRegion
+        ) &&
+        (
+          !search ||
+          (item.name_hy || '')
+            .toLowerCase()
+            .includes(search)
+        )
     );
 
 
@@ -2672,6 +2788,11 @@ function applyFilters() {
     );
 
 
+  const regionLabel =
+    selectedRegion ||
+    'Հայաստան';
+
+
   if (
     selectedTypes.length === 0 &&
     pinnedObjects.length === 0 &&
@@ -2679,7 +2800,7 @@ function applyFilters() {
   ) {
 
     status.textContent =
-      'Ընտրեք մեկ կամ մի քանի շերտ, բացեք որևէ օբյեկտ կամ սկսեք որոնել։';
+      `${regionLabel} · Ընտրեք մեկ կամ մի քանի շերտ, բացեք որևէ օբյեկտ կամ սկսեք որոնել։`;
 
   } else if (
     search &&
@@ -2687,7 +2808,7 @@ function applyFilters() {
   ) {
 
     status.textContent =
-      `Որոնում բոլոր օբյեկտներում։ Գտնվել է՝ ${layerObjects.length}։`;
+      `${regionLabel} · Որոնում բոլոր օբյեկտներում։ Գտնվել է՝ ${layerObjects.length}։`;
 
   } else {
 
@@ -2704,7 +2825,7 @@ function applyFilters() {
 
 
     status.textContent =
-      `${layerLabel}${pinnedLabel}։ Քարտեզում՝ ${mapObjects.length} օբյեկտ։`;
+      `${regionLabel} · ${layerLabel}${pinnedLabel}։ Քարտեզում՝ ${mapObjects.length} օբյեկտ։`;
   }
 }
 
@@ -2862,7 +2983,7 @@ async function loadObjects() {
         'status'
       )
       .textContent =
-        'Ընտրեք մեկ կամ մի քանի շերտ, կամ բացեք որևէ օբյեկտ։';
+        'Հայաստան · Ընտրեք մեկ կամ մի քանի շերտ, կամ բացեք որևէ օբյեկտ։';
 
 
     const initialId =
@@ -3254,6 +3375,58 @@ document
     'input',
     applyFilters
   );
+
+
+const regionFilter =
+  document.getElementById(
+    'region-filter'
+  );
+
+
+if (regionFilter) {
+
+  regionFilter.addEventListener(
+    'change',
+    () => {
+
+      const selectedRegion =
+        getSelectedRegion();
+
+
+      trimPinnedObjectsToRegion(
+        selectedRegion
+      );
+
+
+      const currentId =
+        getObjectIdFromUrl();
+
+
+      const currentItem =
+        currentId
+          ? findObjectById(
+              currentId
+            )
+          : null;
+
+
+      if (
+        currentItem &&
+        !matchesSelectedRegion(
+          currentItem,
+          selectedRegion
+        )
+      ) {
+        closeObjectDetails(
+          true
+        );
+      }
+
+
+      applyFilters();
+    }
+  );
+}
 
 
 document
