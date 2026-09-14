@@ -1201,7 +1201,7 @@ function renderMarkers(data) {
       const geometryStyle =
         isCanal
           ? {
-              color: '#66bb6a',
+              color: '#81c784',
               weight: 3,
               opacity: 0.95,
               lineCap: 'round',
@@ -1350,6 +1350,13 @@ function renderMarkers(data) {
       // Their representative latitude/longitude marker is intentionally omitted.
 
     } else {
+
+      // Do not let a legacy Arzni–Shamiram point-only duplicate fall through
+      // to Leaflet's standard blue marker. The canal is represented only by
+      // its reviewed polyline geometry.
+      if (isArzniShamiramCanal) {
+        return;
+      }
 
       const marker =
         L.marker([
