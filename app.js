@@ -1098,9 +1098,16 @@ function renderMarkers(data) {
       item.longitude !== null;
 
     if (
-      (isSmallLake || isWaterfall || isHydropower || isReservoir || isCanal || isWetland || isSpring) &&
-      hasCoordinates &&
-      !(isCanal && item.geometry)
+      (
+        isSmallLake ||
+        isWaterfall ||
+        isHydropower ||
+        isReservoir ||
+        (isCanal && !item.geometry) ||
+        isWetland ||
+        isSpring
+      ) &&
+      hasCoordinates
     ) {
 
       const marker =
@@ -1187,29 +1194,15 @@ function renderMarkers(data) {
 
     } else if (item.geometry) {
 
-      // Rivers and canals must remain visually distinct on the Atlas map.
-      // Canals use a narrower dashed blue-green line; rivers keep the
-      // established solid blue line.
-      const geometryStyle =
-        isCanal
-          ? {
-              color: '#00838f',
-              weight: 3,
-              opacity: 0.95,
-              dashArray: '8 6',
-              lineCap: 'butt'
-            }
-          : {
-              color: '#1976d2',
-              weight: 4,
-              opacity: 0.9
-            };
-
       const geometryLayer =
         L.geoJSON(
           item.geometry,
           {
-            style: geometryStyle
+            style: {
+              color: '#1976d2',
+              weight: 4,
+              opacity: 0.9
+            }
           }
         ).addTo(map);
 
@@ -1235,8 +1228,7 @@ function renderMarkers(data) {
               typeof part.setStyle === 'function'
             ) {
               part.setStyle({
-                ...geometryStyle,
-                weight: geometryStyle.weight + 2
+                weight: 6
               });
             }
           }
@@ -1248,9 +1240,9 @@ function renderMarkers(data) {
             if (
               typeof part.setStyle === 'function'
             ) {
-              part.setStyle(
-                geometryStyle
-              );
+              part.setStyle({
+                weight: 4
+              });
             }
           }
         );
@@ -1337,9 +1329,6 @@ function renderMarkers(data) {
           sevanMarker
         );
       }
-
-      // Geometry-bearing canals are represented by their real polyline only.
-      // Their representative latitude/longitude marker is intentionally omitted.
 
     } else {
 
@@ -2478,98 +2467,6 @@ function getSelectedTypes() {
 }
 
 
-function getSelectedRegion() {
-
-  const regionFilter =
-    document.getElementById(
-      'region-filter'
-    );
-
-
-  return regionFilter
-    ? regionFilter.value
-    : 'Հայաստան';
-}
-
-
-function matchesSelectedRegion(
-  item,
-  selectedRegion = getSelectedRegion()
-) {
-
-  if (
-    !selectedRegion ||
-    selectedRegion === 'Հայաստան'
-  ) {
-    return true;
-  }
-
-
-  const provinceText =
-    String(
-      item.province || ''
-    )
-      .replace(/\s+/g, ' ')
-      .trim();
-
-
-  if (!provinceText) {
-    return false;
-  }
-
-
-  // The province field may contain more than one territory, for example
-  // "Երևան, Արարատ". Substring matching also covers forms such as
-  // "Արարատի մարզ" and "Վայոց ձորի մարզ".
-  return provinceText.includes(
-    selectedRegion
-  );
-}
-
-
-function getRegionScopedObjects(
-  selectedRegion = getSelectedRegion()
-) {
-
-  return allObjects.filter(
-    item =>
-      matchesSelectedRegion(
-        item,
-        selectedRegion
-      )
-  );
-}
-
-
-function trimPinnedObjectsToRegion(
-  selectedRegion = getSelectedRegion()
-) {
-
-  Array.from(
-    pinnedObjectIds
-  ).forEach(objectId => {
-
-    const item =
-      findObjectById(
-        objectId
-      );
-
-
-    if (
-      !item ||
-      !matchesSelectedRegion(
-        item,
-        selectedRegion
-      )
-    ) {
-      pinnedObjectIds.delete(
-        Number(objectId)
-      );
-    }
-  });
-}
-
-
 function getPinnedObjects() {
 
   return allObjects.filter(
@@ -2687,31 +2584,18 @@ function applyFilters() {
     getSelectedTypes();
 
 
-  const selectedRegion =
-    getSelectedRegion();
-
-
-  const regionObjects =
-    getRegionScopedObjects(
-      selectedRegion
-    );
-
-
-  // The region selector is a hard geographic scope. Thematic layers and
-  // search both operate only inside that scope. When no type is checked but
-  // the user types a search term, search runs across every object type in
-  // the selected territory.
+  // Thematic layers are cumulative: every checked object type stays active.
+  // When a search term is present, it also narrows the objects drawn from
+  // those active layers. Example: search "Հրազդան" + check "Գետեր"
+  // => show only the matching Hrazdan river, not every river.
   const activeLayerObjects =
     (
       search &&
       selectedTypes.length === 0
     )
-      ? regionObjects
-      : regionObjects.filter(
-          item =>
-            selectedTypes.includes(
-              item.type
-            )
+      ? allObjects
+      : getActiveLayerObjects(
+          selectedTypes
         );
 
 
@@ -2725,17 +2609,11 @@ function applyFilters() {
     );
 
 
-  // Explicitly opened objects remain pinned only while they belong to the
-  // currently selected territory. Changing from Armenia to a marz must not
-  // leave unrelated objects from another marz on the map.
+  // Explicitly opened objects remain on the map even when their category is
+  // not currently checked. Search affects thematic layers, but does not
+  // silently remove objects the user explicitly opened/pinned.
   const pinnedObjects =
-    getPinnedObjects().filter(
-      item =>
-        matchesSelectedRegion(
-          item,
-          selectedRegion
-        )
-    );
+    getPinnedObjects();
 
 
   const mapObjects =
@@ -2745,20 +2623,15 @@ function applyFilters() {
     );
 
 
-  // The side list follows the same territory + search scope.
+  // The side list follows the search text. Unrelated pinned objects may stay
+  // on the map, but are not shown as search results.
   const listObjects =
     mapObjects.filter(
       item =>
-        matchesSelectedRegion(
-          item,
-          selectedRegion
-        ) &&
-        (
-          !search ||
-          (item.name_hy || '')
-            .toLowerCase()
-            .includes(search)
-        )
+        !search ||
+        (item.name_hy || '')
+          .toLowerCase()
+          .includes(search)
     );
 
 
@@ -2788,11 +2661,6 @@ function applyFilters() {
     );
 
 
-  const regionLabel =
-    selectedRegion ||
-    'Հայաստան';
-
-
   if (
     selectedTypes.length === 0 &&
     pinnedObjects.length === 0 &&
@@ -2800,7 +2668,7 @@ function applyFilters() {
   ) {
 
     status.textContent =
-      `${regionLabel} · Ընտրեք մեկ կամ մի քանի շերտ, բացեք որևէ օբյեկտ կամ սկսեք որոնել։`;
+      'Ընտրեք մեկ կամ մի քանի շերտ, բացեք որևէ օբյեկտ կամ սկսեք որոնել։';
 
   } else if (
     search &&
@@ -2808,7 +2676,7 @@ function applyFilters() {
   ) {
 
     status.textContent =
-      `${regionLabel} · Որոնում բոլոր օբյեկտներում։ Գտնվել է՝ ${layerObjects.length}։`;
+      `Որոնում բոլոր օբյեկտներում։ Գտնվել է՝ ${layerObjects.length}։`;
 
   } else {
 
@@ -2825,7 +2693,7 @@ function applyFilters() {
 
 
     status.textContent =
-      `${regionLabel} · ${layerLabel}${pinnedLabel}։ Քարտեզում՝ ${mapObjects.length} օբյեկտ։`;
+      `${layerLabel}${pinnedLabel}։ Քարտեզում՝ ${mapObjects.length} օբյեկտ։`;
   }
 }
 
@@ -2983,7 +2851,7 @@ async function loadObjects() {
         'status'
       )
       .textContent =
-        'Հայաստան · Ընտրեք մեկ կամ մի քանի շերտ, կամ բացեք որևէ օբյեկտ։';
+        'Ընտրեք մեկ կամ մի քանի շերտ, կամ բացեք որևէ օբյեկտ։';
 
 
     const initialId =
@@ -3375,58 +3243,6 @@ document
     'input',
     applyFilters
   );
-
-
-const regionFilter =
-  document.getElementById(
-    'region-filter'
-  );
-
-
-if (regionFilter) {
-
-  regionFilter.addEventListener(
-    'change',
-    () => {
-
-      const selectedRegion =
-        getSelectedRegion();
-
-
-      trimPinnedObjectsToRegion(
-        selectedRegion
-      );
-
-
-      const currentId =
-        getObjectIdFromUrl();
-
-
-      const currentItem =
-        currentId
-          ? findObjectById(
-              currentId
-            )
-          : null;
-
-
-      if (
-        currentItem &&
-        !matchesSelectedRegion(
-          currentItem,
-          selectedRegion
-        )
-      ) {
-        closeObjectDetails(
-          true
-        );
-      }
-
-
-      applyFilters();
-    }
-  );
-}
 
 
 document
