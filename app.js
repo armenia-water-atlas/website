@@ -1201,7 +1201,7 @@ function renderMarkers(data) {
       const geometryStyle =
         isCanal
           ? {
-              color: '#81c784',
+              color: '#4caf50',
               weight: 3,
               opacity: 0.95,
               lineCap: 'round',
