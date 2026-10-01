@@ -1041,6 +1041,11 @@ function createHydropowerIcon(status) {
 }
 
 
+// Arpi uses its shoreline when available; the existing symbol is the fallback.
+function isArpiLake(item) {
+  return item.type === 'lake' && Number(item.id) === 74;
+}
+
 function renderMarkers(data) {
 
   clearMarkers();
@@ -1071,9 +1076,15 @@ function renderMarkers(data) {
       isLake &&
       item.name_hy === 'Սևանա լիճ';
 
+    const isOutlinedArpi =
+      isArpiLake(item) &&
+      item.geometry &&
+      ['Polygon', 'MultiPolygon'].includes(item.geometry.type);
+
     const isSmallLake =
       isLake &&
-      !isSevan;
+      !isSevan &&
+      !isOutlinedArpi;
 
     const isWaterfall =
       item.type === 'waterfall';
@@ -1199,7 +1210,15 @@ function renderMarkers(data) {
       // Rivers and canals remain visually distinct.
       // Canals: continuous light-green line. Rivers: established solid blue.
       const geometryStyle =
-        isCanal
+        isOutlinedArpi
+          ? {
+              color: '#1976d2',
+              weight: 3,
+              opacity: 0.95,
+              fillColor: '#64b5f6',
+              fillOpacity: 0.18
+            }
+          : isCanal
           ? {
               color: '#4caf50',
               weight: 3,
@@ -2945,7 +2964,7 @@ async function loadObjects() {
         item.type === 'canal' ||
         (
           item.type === 'lake' &&
-          item.name_hy === 'Սևանա լիճ'
+          (item.name_hy === 'Սևանա լիճ' || isArpiLake(item))
         )
       );
 
