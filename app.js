@@ -1046,9 +1046,9 @@ function isOutlinedLake(item) {
   return item.type === 'lake' && [74, 81].includes(Number(item.id));
 }
 
-// Tavshut uses its shoreline when available; the reservoir symbol is the fallback.
+// Tavshut and Metsavan use their shorelines when available; symbols are the fallback.
 function isOutlinedReservoir(item) {
-  return item.type === 'reservoir' && Number(item.id) === 339;
+  return item.type === 'reservoir' && [339, 348].includes(Number(item.id));
 }
 
 function renderMarkers(data) {
