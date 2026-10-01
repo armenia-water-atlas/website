@@ -1046,6 +1046,11 @@ function isOutlinedLake(item) {
   return item.type === 'lake' && [74, 81].includes(Number(item.id));
 }
 
+// Tavshut uses its shoreline when available; the reservoir symbol is the fallback.
+function isOutlinedReservoir(item) {
+  return item.type === 'reservoir' && Number(item.id) === 339;
+}
+
 function renderMarkers(data) {
 
   clearMarkers();
@@ -1076,15 +1081,15 @@ function renderMarkers(data) {
       isLake &&
       item.name_hy === 'Սևանա լիճ';
 
-    const isOutlinedLakePolygon =
-      isOutlinedLake(item) &&
+    const isOutlinedWaterPolygon =
+      (isOutlinedLake(item) || isOutlinedReservoir(item)) &&
       item.geometry &&
       ['Polygon', 'MultiPolygon'].includes(item.geometry.type);
 
     const isSmallLake =
       isLake &&
       !isSevan &&
-      !isOutlinedLakePolygon;
+      !isOutlinedWaterPolygon;
 
     const isWaterfall =
       item.type === 'waterfall';
@@ -1120,7 +1125,8 @@ function renderMarkers(data) {
       (isSmallLake || isWaterfall || isHydropower || isReservoir || isCanal || isWetland || isSpring) &&
       hasCoordinates &&
       !isArzniShamiramCanal &&
-      !(isCanal && item.geometry)
+      !(isCanal && item.geometry) &&
+      !isOutlinedWaterPolygon
     ) {
 
       const marker =
@@ -1210,7 +1216,7 @@ function renderMarkers(data) {
       // Rivers and canals remain visually distinct.
       // Canals: continuous light-green line. Rivers: established solid blue.
       const geometryStyle =
-        isOutlinedLakePolygon
+        isOutlinedWaterPolygon
           ? {
               color: '#1976d2',
               weight: 3,
@@ -2965,7 +2971,8 @@ async function loadObjects() {
         (
           item.type === 'lake' &&
           (item.name_hy === 'Սևանա լիճ' || isOutlinedLake(item))
-        )
+        ) ||
+        isOutlinedReservoir(item)
       );
 
 
