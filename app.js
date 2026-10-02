@@ -21,7 +21,8 @@ const STATUS_LABELS = {
   natural: 'Բնական',
   operational: 'Գործող',
   planned: 'Նախատեսվող',
-  construction: 'Կառուցվող'
+  construction: 'Կառուցվող',
+  industrial: 'Արդյունաբերական'
 };
 
 
@@ -608,7 +609,7 @@ function buildHoverInfo(item) {
   html +=
     `<div class="popup-row">` +
     `<strong>Տեսակ՝</strong> ` +
-    `${typeLabel(item.type)}` +
+    `${objectTypeLabel(item)}` +
     `</div>`;
 
 
@@ -1047,8 +1048,18 @@ function isOutlinedLake(item) {
 }
 
 // Tavshut and Metsavan use their shorelines when available; symbols are the fallback.
+function isTailingsPond(item) {
+  return item.type === 'reservoir' && item.status === 'industrial' &&
+    item.name_hy === 'Թեղուտի պոչամբար';
+}
+
+function objectTypeLabel(item) {
+  return isTailingsPond(item) ? 'Պոչամբար' : typeLabel(item.type);
+}
+
 function isOutlinedReservoir(item) {
-  return item.type === 'reservoir' && [339, 348].includes(Number(item.id));
+  return item.type === 'reservoir' &&
+    ([339, 348].includes(Number(item.id)) || isTailingsPond(item));
 }
 
 function renderMarkers(data) {
@@ -1218,10 +1229,10 @@ function renderMarkers(data) {
       const geometryStyle =
         isOutlinedWaterPolygon
           ? {
-              color: '#1976d2',
+              color: isTailingsPond(item) ? '#8d6e63' : '#1976d2',
               weight: 3,
               opacity: 0.95,
-              fillColor: '#64b5f6',
+              fillColor: isTailingsPond(item) ? '#bcaaa4' : '#64b5f6',
               fillOpacity: 0.18
             }
           : isCanal
@@ -1497,7 +1508,7 @@ function renderList(data) {
       </span>
 
       <span class="object-meta">
-        ${typeLabel(item.type)}
+        ${objectTypeLabel(item)}
       </span>
     `;
 
@@ -1583,7 +1594,7 @@ async function openObjectDetails(
       'details-type'
     )
     .textContent =
-      typeLabel(item.type);
+      objectTypeLabel(item);
 
 
   document
