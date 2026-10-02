@@ -778,3 +778,33 @@ footer {
     height: 56px !important;
   }
 }
+
+/* Compact header leaves more room for the national map. */
+header.site-header {
+  padding: 10px 20px;
+}
+header.site-header h1 {
+  margin: 0 0 2px;
+  font-size: 26px;
+  line-height: 1.15;
+}
+header.site-header p {
+  font-size: 14px;
+  line-height: 1.3;
+}
+.atlas-layout {
+  padding: 12px;
+  gap: 16px;
+}
+.map-toolbar {
+  min-height: 38px;
+  padding: 6px 14px;
+}
+.map-toolbar h2 {
+  font-size: 19px;
+}
+@media (max-width: 760px) {
+  header.site-header { padding: 8px 12px; }
+  header.site-header h1 { font-size: 23px; }
+  header.site-header p { font-size: 13px; }
+}
