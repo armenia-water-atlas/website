@@ -1059,7 +1059,7 @@ function objectTypeLabel(item) {
 
 function isOutlinedReservoir(item) {
   return item.type === 'reservoir' &&
-    ([339, 340, 348, 552].includes(Number(item.id)) || isTailingsPond(item));
+    ([336, 339, 340, 348, 552].includes(Number(item.id)) || isTailingsPond(item));
 }
 
 function renderMarkers(data) {
