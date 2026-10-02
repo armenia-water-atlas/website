@@ -85,8 +85,8 @@ function sizeAtlasMap() {
 function showArmeniaOverview() {
   sizeAtlasMap();
   map.fitBounds(ARMENIA_BOUNDS, {
-    padding: [32, 32],
-    maxZoom: 7.5,
+    padding: [24, 24],
+    maxZoom: 8,
     animate: false
   });
 }
