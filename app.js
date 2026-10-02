@@ -1047,7 +1047,7 @@ function isOutlinedLake(item) {
   return item.type === 'lake' && [74, 81].includes(Number(item.id));
 }
 
-// Tavshut and Metsavan use their shorelines when available; symbols are the fallback.
+// Tavshut, Berkaber and Metsavan use their shorelines when available; symbols are the fallback.
 function isTailingsPond(item) {
   return item.type === 'reservoir' && item.status === 'industrial' &&
     item.name_hy === 'Թեղուտի պոչամբար';
@@ -1059,7 +1059,7 @@ function objectTypeLabel(item) {
 
 function isOutlinedReservoir(item) {
   return item.type === 'reservoir' &&
-    ([339, 348].includes(Number(item.id)) || isTailingsPond(item));
+    ([339, 340, 348].includes(Number(item.id)) || isTailingsPond(item));
 }
 
 function renderMarkers(data) {
