@@ -68,6 +68,36 @@ const map = L.map(
 );
 
 
+// Fit the national overview to the visible map, including on short screens.
+function sizeAtlasMap() {
+  const container = map.getContainer();
+  if (window.matchMedia('(min-width: 761px)').matches) {
+    const top = container.getBoundingClientRect().top + window.scrollY;
+    container.style.minHeight = '0';
+    container.style.height = Math.max(240, window.innerHeight - top - 24) + 'px';
+  } else {
+    container.style.removeProperty('min-height');
+    container.style.removeProperty('height');
+  }
+  map.invalidateSize({pan: false, animate: false});
+}
+
+function showArmeniaOverview() {
+  sizeAtlasMap();
+  map.fitBounds(ARMENIA_BOUNDS, {
+    padding: [32, 32],
+    maxZoom: 7.5,
+    animate: false
+  });
+}
+
+showArmeniaOverview();
+window.addEventListener('resize', () => {
+  const wasOverview = map.getBounds().contains(ARMENIA_BOUNDS);
+  sizeAtlasMap();
+  if (wasOverview) showArmeniaOverview();
+});
+
 L.tileLayer(
   'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   {
@@ -1457,13 +1487,7 @@ function renderMarkers(data) {
   // Category selection must never crop Armenia to the extent of the
   // selected objects. Keep the whole country visible so empty regions are
   // immediately recognizable as regions without objects of this category.
-  map.fitBounds(
-    ARMENIA_BOUNDS,
-    {
-      padding: [24, 24],
-      maxZoom: 8
-    }
-  );
+  showArmeniaOverview();
 }
 
 
@@ -1866,10 +1890,7 @@ function closeObjectDetails(
   }
 
 
-  map.setView(
-    ARMENIA_CENTER,
-    ARMENIA_ZOOM
-  );
+  showArmeniaOverview();
 }
 
 
@@ -3021,13 +3042,7 @@ async function loadObjects() {
     );
 
 
-    map.fitBounds(
-      ARMENIA_BOUNDS,
-      {
-        padding: [24, 24],
-        maxZoom: 8
-      }
-    );
+    showArmeniaOverview();
 
 
     document
@@ -3379,13 +3394,7 @@ function ensureLayerControls() {
       applyFilters();
 
 
-      map.fitBounds(
-        ARMENIA_BOUNDS,
-        {
-          padding: [24, 24],
-          maxZoom: 8
-        }
-      );
+      showArmeniaOverview();
 
 
       closeObjectDetails(
