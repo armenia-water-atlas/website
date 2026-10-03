@@ -59,7 +59,7 @@ const ARMENIA_BOUNDS = L.latLngBounds(
 const map = L.map(
   'map',
   {
-    zoomSnap: 0.25,
+    zoomSnap: 0.1,
     zoomDelta: 0.5
   }
 ).setView(
@@ -74,7 +74,7 @@ function sizeAtlasMap() {
   if (window.matchMedia('(min-width: 761px)').matches) {
     const top = container.getBoundingClientRect().top + window.scrollY;
     container.style.minHeight = '0';
-    container.style.height = Math.max(240, window.innerHeight - top - 24) + 'px';
+    container.style.height = Math.max(240, window.innerHeight - top - 12) + 'px';
   } else {
     container.style.removeProperty('min-height');
     container.style.removeProperty('height');
@@ -85,7 +85,7 @@ function sizeAtlasMap() {
 function showArmeniaOverview() {
   sizeAtlasMap();
   map.fitBounds(ARMENIA_BOUNDS, {
-    padding: [24, 24],
+    padding: [12, 12],
     maxZoom: 8,
     animate: false
   });
