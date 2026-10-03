@@ -808,3 +808,37 @@ header.site-header p {
   header.site-header h1 { font-size: 23px; }
   header.site-header p { font-size: 13px; }
 }
+
+/* Dense controls and smaller gaps leave more space for the map. */
+header.site-header { padding: 8px 16px; }
+header.site-header h1 { font-size: 25px; margin-bottom: 1px; }
+header.site-header p { font-size: 13px; }
+.atlas-layout {
+  grid-template-columns: 250px minmax(0, 1fr);
+  padding: 8px;
+  gap: 8px;
+}
+.sidebar { padding: 12px; font-size: 14px; line-height: 1.3; }
+.sidebar h2 { margin: 0 0 10px; font-size: 18px; }
+.sidebar h3 { margin: 12px 0 6px; font-size: 15px; }
+.sidebar label + label { margin-top: 4px; }
+.sidebar #search { padding: 7px 9px; margin-top: 4px; font-size: 14px; border-radius: 8px; }
+.sidebar .region-box { margin-top: 8px; }
+.sidebar .region-box select { padding: 6px 8px; font-size: 14px; border-radius: 8px; }
+.sidebar .filter-option { line-height: 1.35; }
+.sidebar .type-filter { margin-right: 6px; transform: none; }
+.sidebar #status { margin-top: 10px; padding: 8px; font-size: 12px; }
+.sidebar #water-layer-controls { gap: 4px !important; margin-top: 8px !important; }
+.sidebar #water-layer-controls button { font-size: 11px !important; padding: 5px 6px !important; }
+.sidebar #object-items { margin-top: 6px; max-height: 280px; }
+.sidebar .object-item { padding: 7px 2px; }
+.sidebar .object-meta { font-size: 12px; }
+.map-toolbar { min-height: 34px; padding: 4px 12px; }
+.map-toolbar h2 { font-size: 18px; }
+@media (max-width: 1000px) and (min-width: 761px) {
+  .atlas-layout { grid-template-columns: 230px minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .atlas-layout { display: block; padding: 8px; }
+  .sidebar { margin-bottom: 8px; }
+}
