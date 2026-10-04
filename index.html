@@ -48,6 +48,28 @@
     }
   </style>
 
+
+  <!-- General hydrography: styles scoped to the new block -->
+  <style>
+    .hydro-overview {box-sizing:border-box;margin:24px auto;padding:clamp(20px,3vw,40px);max-width:1440px;width:calc(100% - 32px);background:#fff;color:#263746;border:1px solid #dce6e9;border-radius:14px;line-height:1.8;}
+    .hydro-overview * {box-sizing:border-box;}
+    .hydro-overview h2 {margin:0 0 12px;color:#17685f;font-size:clamp(24px,3vw,34px);line-height:1.4;}
+    .hydro-overview h3 {margin:0 0 10px;color:#17685f;font-size:21px;}
+    .hydro-overview p {margin:0 0 14px;}
+    .hydro-overview a {color:#17685f;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere;}
+    .hydro-overview a:focus-visible {outline:2px solid #247c72;outline-offset:4px;}
+    .hydro-overview .hydro-intro {display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,420px);gap:28px;align-items:start;}
+    .hydro-overview .hydro-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:24px;}
+    .hydro-overview article {padding:20px;background:#f5f9fa;border:1px solid #e1eaed;border-radius:10px;min-width:0;}
+    .hydro-overview figure {margin:0;min-width:0;}
+    .hydro-overview img {display:block;width:100%;height:auto;border-radius:8px;background:#f5f9fa;}
+    .hydro-overview figcaption {font-size:13px;color:#526875;margin:8px 0 0;}
+    .hydro-overview .hydro-gallery {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:24px;}
+    .hydro-overview .hydro-source {margin-top:24px;padding-top:18px;border-top:1px solid #dce6e9;font-size:14px;color:#526875;}
+    @media(max-width:760px) {.hydro-overview .hydro-intro,.hydro-overview .hydro-grid {grid-template-columns:1fr;}.hydro-overview .hydro-gallery {grid-template-columns:repeat(2,minmax(0,1fr));}.hydro-overview {width:calc(100% - 20px);margin:16px auto;}}
+    @media(max-width:480px) {.hydro-overview .hydro-gallery {grid-template-columns:1fr;}}
+  </style>
+
 </head>
 
 
@@ -346,6 +368,40 @@
   </section>
 
 </main>
+
+<!-- General hydrography: independent reference block below the atlas map -->
+<section id="general-hydrography" class="hydro-overview" aria-labelledby="hydro-title">
+  <h2 id="hydro-title">Հայաստանի ընդհանուր ջրագրությունը</h2>
+  <div class="hydro-intro">
+    <div>
+      <p>Հայաստանի ջրագրական համակարգը ներառում է գետեր, լճեր, ջրամբարներ, ստորերկրյա ջրեր, աղբյուրներ, ջրվեժներ և խոնավ տարածքներ։</p>
+      <h3>Ջրհավաք ավազանները</h3>
+      <p>Հայաստանի գետերը պատկանում են Արաքսի և Կուրի ավազաններին։ Հոդվածում դրանց բաժինները նշված են համապատասխանաբար 76,4% և 23,6%։</p>
+      <p>Արաքսի համակարգին են պատկանում Ախուրյանը, Սևջուր–Մեծամորը՝ Քասաղով, Հրազդանը, Ազատը, Վեդին, Արփան, Որոտանը, Ողջին և Մեղրին։ Կուրի համակարգին՝ Դեբեդը՝ Փամբակով ու Ձորագետով, Աղստևը և Հայաստանի հյուսիսարևելյան մյուս գետերը։</p>
+      <p>Սևանի ջրհավաք ավազանը Հրազդանի միջոցով կապված է Արաքսի համակարգին։</p>
+    </div>
+    <figure><a href="https://hy.wikipedia.org/wiki/Պատկեր:Rivers_of_Armenia.jpg" target="_blank" rel="noopener noreferrer"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/Rivers_of_Armenia.jpg/960px-Rivers_of_Armenia.jpg" alt="Հայաստանի ջրագրական քարտեզ" loading="lazy" decoding="async" width="960" height="931"></a><figcaption>Հայաստանի ջրագրական քարտեզ · <a href="https://hy.wikipedia.org/wiki/Պատկեր:Rivers_of_Armenia.jpg" target="_blank" rel="noopener noreferrer">Հեղինակ և արտոնագիր</a></figcaption></figure>
+  </div>
+  <div class="hydro-grid">
+    <article><h3>Գետերը</h3><p>Գետերի սնումը խառն է՝ ձնհալքային, անձրևային և ստորերկրյա։ Հոսքը հիմնականում սեզոնային է, իսկ գետերի մեծ մասը լեռնային բնույթ ունի։ Հորդացումները բնորոշ են գարնանը և աշնանը։</p></article>
+    <article><h3>Լճերը</h3><p>Խոշորագույն լիճը Սևանն է։ Մյուսներից են Արփին, Սև լիճը, Քարի, Ակնա, Պարզ և Մեծամոր լճերը։ Շատ փոքր լճեր գտնվում են բարձրլեռնային գոտում, որոշները՝ հրաբխային խառնարաններում։</p></article>
+    <article><h3>Ջրամբարները</h3><p>Ջրամբարները ծառայում են ջրի կուտակման, ոռոգման և էներգետիկայի նպատակներին։ Խոշոր օրինակ է Ախուրյանի ջրամբարը։</p></article>
+    <article><h3>Ստորերկրյա ջրերը և աղբյուրները</h3><p>Ստորերկրյա ջրերը կարևոր են գետերի սնման և ջրամատակարարման համար։ Արարատյան դաշտում տարածված են արտեզյան ջրերը։</p></article>
+    <article><h3>Ջրվեժները</h3><p>Հայաստանի ջրվեժներից են Ջերմուկի, Թռչկանի, Շաքիի, Գեղարոտի և Քասաղի ջրվեժները։</p></article>
+    <article><h3>Ճահիճները և խոնավ տարածքները</h3><p>Խոնավ տարածքներ կան Արաքսի հովտում, Խոր Վիրապի և Մասրիկի շրջակայքում։ Մեծամորի ճահճային համակարգն ընդգրկում է Այղր լիճը, Սևջուրը և հարակից ճահիճները։</p></article>
+  </div>
+  <div class="hydro-gallery" aria-label="Ջրագրական լուսանկարներ"><figure><a href="https://hy.wikipedia.org/wiki/Պատկեր:Debed_River_in_Alaverdi_city_(29.07.2023).jpg" target="_blank" rel="noopener noreferrer"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3f/Debed_River_in_Alaverdi_city_%2829.07.2023%29.jpg/960px-Debed_River_in_Alaverdi_city_%2829.07.2023%29.jpg" alt="Դեբեդը՝ Ալավերդիում" loading="lazy" decoding="async" width="960" height="720"></a><figcaption>Դեբեդը՝ Ալավերդիում · <a href="https://hy.wikipedia.org/wiki/Պատկեր:Debed_River_in_Alaverdi_city_(29.07.2023).jpg" target="_blank" rel="noopener noreferrer">Հեղինակ և արտոնագիր</a></figcaption></figure>
+<figure><a href="https://hy.wikipedia.org/wiki/Պատկեր:Ազատի_ջրամբար.JPG" target="_blank" rel="noopener noreferrer"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/%D4%B1%D5%A6%D5%A1%D5%BF%D5%AB_%D5%BB%D6%80%D5%A1%D5%B4%D5%A2%D5%A1%D6%80.JPG/960px-%D4%B1%D5%A6%D5%A1%D5%BF%D5%AB_%D5%BB%D6%80%D5%A1%D5%B4%D5%A2%D5%A1%D6%80.JPG" alt="Ազատի ջրամբարը" loading="lazy" decoding="async" width="960" height="639"></a><figcaption>Ազատի ջրամբարը · <a href="https://hy.wikipedia.org/wiki/Պատկեր:Ազատի_ջրամբար.JPG" target="_blank" rel="noopener noreferrer">Հեղինակ և արտոնագիր</a></figcaption></figure>
+<figure><a href="https://hy.wikipedia.org/wiki/Պատկեր:Ամբերդ_գետի_հովիտը.jpg" target="_blank" rel="noopener noreferrer"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/%D4%B1%D5%B4%D5%A2%D5%A5%D6%80%D5%A4_%D5%A3%D5%A5%D5%BF%D5%AB_%D5%B0%D5%B8%D5%BE%D5%AB%D5%BF%D5%A8.jpg/960px-%D4%B1%D5%B4%D5%A2%D5%A5%D6%80%D5%A4_%D5%A3%D5%A5%D5%BF%D5%AB_%D5%B0%D5%B8%D5%BE%D5%AB%D5%BF%D5%A8.jpg" alt="Ամբերդ գետի հովիտը" loading="lazy" decoding="async" width="960" height="720"></a><figcaption>Ամբերդ գետի հովիտը · <a href="https://hy.wikipedia.org/wiki/Պատկեր:Ամբերդ_գետի_հովիտը.jpg" target="_blank" rel="noopener noreferrer">Հեղինակ և արտոնագիր</a></figcaption></figure>
+<figure><a href="https://hy.wikipedia.org/wiki/Պատկեր:Jezero_Sevan.jpg" target="_blank" rel="noopener noreferrer"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Jezero_Sevan.jpg/960px-Jezero_Sevan.jpg" alt="Սևանա լիճը" loading="lazy" decoding="async" width="960" height="504"></a><figcaption>Սևանա լիճը · <a href="https://hy.wikipedia.org/wiki/Պատկեր:Jezero_Sevan.jpg" target="_blank" rel="noopener noreferrer">Հեղինակ և արտոնագիր</a></figcaption></figure>
+<figure><a href="https://hy.wikipedia.org/wiki/Պատկեր:Ազատի_ջրամբար_ու_կղզիներ.JPG" target="_blank" rel="noopener noreferrer"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d2/%D4%B1%D5%A6%D5%A1%D5%BF%D5%AB_%D5%BB%D6%80%D5%A1%D5%B4%D5%A2%D5%A1%D6%80_%D5%B8%D6%82_%D5%AF%D5%B2%D5%A6%D5%AB%D5%B6%D5%A5%D6%80.JPG/960px-%D4%B1%D5%A6%D5%A1%D5%BF%D5%AB_%D5%BB%D6%80%D5%A1%D5%B4%D5%A2%D5%A1%D6%80_%D5%B8%D6%82_%D5%AF%D5%B2%D5%A6%D5%AB%D5%B6%D5%A5%D6%80.JPG" alt="Ազատի ջրամբարը և կղզիները" loading="lazy" decoding="async" width="960" height="637"></a><figcaption>Ազատի ջրամբարը և կղզիները · <a href="https://hy.wikipedia.org/wiki/Պատկեր:Ազատի_ջրամբար_ու_կղզիներ.JPG" target="_blank" rel="noopener noreferrer">Հեղինակ և արտոնագիր</a></figcaption></figure>
+<figure><a href="https://hy.wikipedia.org/wiki/Պատկեր:Kasakh_Waterfall3.jpg" target="_blank" rel="noopener noreferrer"><img src="https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f5/Kasakh_Waterfall3.jpg/960px-Kasakh_Waterfall3.jpg" alt="Քասաղի ջրվեժը" loading="lazy" decoding="async" width="960" height="640"></a><figcaption>Քասաղի ջրվեժը · <a href="https://hy.wikipedia.org/wiki/Պատկեր:Kasakh_Waterfall3.jpg" target="_blank" rel="noopener noreferrer">Հեղինակ և արտոնագիր</a></figcaption></figure></div>
+  <div class="hydro-source">
+    <p>Ժամանակավոր ամփոփ տարբերակ՝ մշակված Վիքիպեդիայի <a href="https://hy.wikipedia.org/wiki/Հայաստանի_ջրագրություն" target="_blank" rel="noopener noreferrer">«Հայաստանի ջրագրություն»</a> հոդվածի հիման վրա։ Թվային աղյուսակները կլրացվեն տվյալների ստուգումից հետո։</p>
+    <p>Տեքստի աղբյուր՝ Վիքիպեդիայի հեղինակներ, <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>։ Տեքստը համառոտված և խմբագրված է։ Պատկերների հեղինակներն ու օգտագործման պայմանները նշված են դրանց անհատական էջերում։</p>
+  </div>
+</section>
+
 
 
 <footer class="site-footer">
