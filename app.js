@@ -794,31 +794,19 @@ function createWaterfallIcon() {
           viewBox="0 0 15 15"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <!--
-            Waterfall: three falling, slightly right-leaning jets.
-            The upper parts are close together; toward the bottom
-            they open outward, making the symbol read as falling water.
-          -->
+          <!-- Waterfall: a ledge, three falling streams and a lower wave. -->
           <g
             fill="none"
             stroke="#1976d2"
-            stroke-width="1.55"
+            stroke-width="1.6"
             stroke-linecap="round"
             stroke-linejoin="round"
-            transform="rotate(12 7.5 7.5)"
           >
-            <path d="M4.6 1.4
-                     C3.8 3.0 5.2 4.0 4.5 5.5
-                     C3.8 7.0 4.9 8.1 4.1 9.7
-                     C3.5 10.9 3.2 12.0 2.8 13.5"/>
-            <path d="M7.5 1.2
-                     C6.7 2.9 8.1 4.0 7.4 5.5
-                     C6.7 7.0 7.9 8.2 7.2 9.7
-                     C6.7 11.0 6.7 12.1 6.6 13.7"/>
-            <path d="M10.4 1.4
-                     C9.6 3.0 11.0 4.0 10.3 5.5
-                     C9.6 7.0 10.8 8.1 10.1 9.7
-                     C9.7 10.9 10.2 12.0 10.8 13.5"/>
+            <path d="M2.1 2.8 H10.2 C11.7 2.8 12.2 3.8 12.2 5.2 V10"/>
+            <path d="M4.4 2.8 C5.2 3.4 5.5 4.3 5.5 5.3 V10"/>
+            <path d="M7.7 2.8 C8.5 3.4 8.8 4.3 8.8 5.3 V10"/>
+            <path d="M2.2 12.2 C3.1 13.1 4 13.1 4.9 12.2 S6.7 11.3 7.6 12.2
+                     S9.4 13.1 10.3 12.2 S12.1 11.3 13 12.2"/>
           </g>
         </svg>
       </div>
