@@ -1073,7 +1073,7 @@ function isOutlinedLake(item) {
   return item.type === 'lake';
 }
 
-// Tavshut, Berkaber and Metsavan use their shorelines when available; symbols are the fallback.
+// Industrial ponds retain their distinct polygon style.
 function isTailingsPond(item) {
   return item.type === 'reservoir' && item.status === 'industrial' &&
     item.name_hy === 'Թեղուտի պոչամբար';
@@ -1084,8 +1084,7 @@ function objectTypeLabel(item) {
 }
 
 function isOutlinedReservoir(item) {
-  return item.type === 'reservoir' &&
-    ([336, 339, 340, 341, 348, 552, 587].includes(Number(item.id)) || isTailingsPond(item));
+  return item.type === 'reservoir';
 }
 
 function getWaterfallPoints(item) {
@@ -1403,25 +1402,25 @@ function renderMarkers(data) {
       layer =
         geometryLayer;
 
-      // Every lake keeps its outline and its conventional lake symbol.
+      // Every lake and reservoir keeps its outline and its conventional symbol.
       if (
-        isLake &&
+        (isLake || isReservoir) &&
         hasCoordinates
       ) {
 
-        const lakeMarker =
+        const waterMarker =
           L.marker(
             [
               item.latitude,
               item.longitude
             ],
             {
-              icon: createLakeIcon(),
+              icon: isReservoir ? createReservoirIcon(item.status) : createLakeIcon(),
               zIndexOffset: 700
             }
           ).addTo(map);
 
-        lakeMarker.bindTooltip(
+        waterMarker.bindTooltip(
           buildHoverInfo(item),
           {
             direction: 'auto',
@@ -1434,14 +1433,14 @@ function renderMarkers(data) {
           }
         );
 
-        lakeMarker.waterObjectId =
+        waterMarker.waterObjectId =
           item.id;
 
-        lakeMarker.on(
+        waterMarker.on(
           'click',
           () => {
 
-            lakeMarker.closeTooltip();
+            waterMarker.closeTooltip();
 
             openObjectDetails(
               item,
@@ -1456,7 +1455,7 @@ function renderMarkers(data) {
         );
 
         markers.push(
-          lakeMarker
+          waterMarker
         );
       }
 
