@@ -1403,14 +1403,13 @@ function renderMarkers(data) {
       layer =
         geometryLayer;
 
-      // Lake Sevan keeps its real polygon, but also receives
-      // the same conventional lake symbol used for other lakes.
+      // Every lake keeps its outline and its conventional lake symbol.
       if (
-        isSevan &&
+        isLake &&
         hasCoordinates
       ) {
 
-        const sevanMarker =
+        const lakeMarker =
           L.marker(
             [
               item.latitude,
@@ -1422,7 +1421,7 @@ function renderMarkers(data) {
             }
           ).addTo(map);
 
-        sevanMarker.bindTooltip(
+        lakeMarker.bindTooltip(
           buildHoverInfo(item),
           {
             direction: 'auto',
@@ -1435,14 +1434,14 @@ function renderMarkers(data) {
           }
         );
 
-        sevanMarker.waterObjectId =
+        lakeMarker.waterObjectId =
           item.id;
 
-        sevanMarker.on(
+        lakeMarker.on(
           'click',
           () => {
 
-            sevanMarker.closeTooltip();
+            lakeMarker.closeTooltip();
 
             openObjectDetails(
               item,
@@ -1457,7 +1456,7 @@ function renderMarkers(data) {
         );
 
         markers.push(
-          sevanMarker
+          lakeMarker
         );
       }
 
