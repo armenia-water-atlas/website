@@ -578,6 +578,14 @@ function focusObjectOnMap(
       item.id
     );
 
+  // Cascade symbols can be displaced for readability; fit their true positions.
+  if (layer && layer.waterfallBounds && layer.waterfallBounds.isValid()) {
+    map.fitBounds(layer.waterfallBounds, {
+      padding: [35, 35],
+      maxZoom: 17
+    });
+    return;
+  }
 
   if (
     layer &&
@@ -1080,6 +1088,27 @@ function isOutlinedReservoir(item) {
     ([336, 339, 340, 341, 348, 552, 587].includes(Number(item.id)) || isTailingsPond(item));
 }
 
+function getWaterfallPoints(item) {
+  if (item.type !== 'waterfall' || !item.geometry ||
+      item.geometry.type !== 'MultiPoint' ||
+      !Array.isArray(item.geometry.coordinates)) {
+    return [];
+  }
+
+  const seen = new Set();
+  return item.geometry.coordinates.filter(point => {
+    if (!Array.isArray(point) || point.length < 2 ||
+        !Number.isFinite(point[0]) || !Number.isFinite(point[1]) ||
+        Math.abs(point[0]) > 180 || Math.abs(point[1]) > 90) {
+      return false;
+    }
+    const key = `${point[0]},${point[1]}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).map(point => L.latLng(point[1], point[0]));
+}
+
 function renderMarkers(data) {
 
   clearMarkers();
@@ -1150,7 +1179,39 @@ function renderMarkers(data) {
       item.latitude !== null &&
       item.longitude !== null;
 
-    if (
+    const waterfallPoints = getWaterfallPoints(item);
+
+    if (waterfallPoints.length) {
+      // One database object, with one custom symbol at each cascade location.
+      layer = L.featureGroup().addTo(map);
+      layer.waterObjectId = item.id;
+      layer.waterfallBounds = L.latLngBounds(waterfallPoints);
+
+      waterfallPoints.forEach(point => {
+        const marker = L.marker(point, {
+          icon: createWaterfallIcon(),
+          zIndexOffset: 500
+        }).addTo(layer);
+
+        marker.waterObjectId = item.id;
+        marker.trueLatLng = point;
+        marker.bindTooltip(buildHoverInfo(item), {
+          direction: 'auto',
+          offset: [0, 0],
+          opacity: 1,
+          sticky: false,
+          interactive: false,
+          className: 'object-hover-tooltip'
+        });
+        smallLakeCollisionMarkers.push({ marker, trueLatLng: point });
+        marker.on('click', () => {
+          marker.closeTooltip();
+          openObjectDetails(item, true);
+          focusObjectOnMap(item, 13);
+        });
+      });
+
+    } else if (
       (isSmallLake || isWaterfall || isHydropower || isReservoir || isCanal || isWetland || isSpring) &&
       hasCoordinates &&
       !isArzniShamiramCanal &&
@@ -2988,6 +3049,7 @@ async function loadObjects() {
       allObjects.filter(item =>
         item.type === 'river' ||
         item.type === 'canal' ||
+        item.type === 'waterfall' ||
         (
           item.type === 'lake' &&
           (item.name_hy === 'Սևանա լիճ' || isOutlinedLake(item))
