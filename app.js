@@ -1303,7 +1303,7 @@ function renderMarkers(data) {
     } else if (item.geometry) {
 
       // Rivers and canals remain visually distinct.
-      // Canals: continuous light-green line. Rivers: established solid blue.
+      // Canals: continuous darker-green line. Rivers: established solid blue.
       const geometryStyle =
         isOutlinedWaterPolygon
           ? {
@@ -1315,7 +1315,7 @@ function renderMarkers(data) {
             }
           : isCanal
           ? {
-              color: '#4caf50',
+              color: '#388e3c',
               weight: 3,
               opacity: 0.95,
               lineCap: 'round',
