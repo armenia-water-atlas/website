@@ -1068,9 +1068,9 @@ function createHydropowerIcon(status) {
 }
 
 
-// Arpi and Ardenis use their shorelines when available; symbols are the fallback.
+// Load every lake's available shoreline and keep its conventional symbol.
 function isOutlinedLake(item) {
-  return item.type === 'lake' && [74, 81].includes(Number(item.id));
+  return item.type === 'lake';
 }
 
 // Tavshut, Berkaber and Metsavan use their shorelines when available; symbols are the fallback.
