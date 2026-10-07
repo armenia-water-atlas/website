@@ -1113,19 +1113,32 @@ function renderMarkers(data) {
   clearMarkers();
 
   const mapped =
-    data.filter(item =>
-      (
-        item.type === 'lake' &&
-        item.name_hy !== 'Սևանա լիճ' &&
-        item.latitude !== null &&
-        item.longitude !== null
-      ) ||
-      item.geometry ||
-      (
-        item.latitude !== null &&
-        item.longitude !== null
-      )
-    );
+    data.filter(item => {
+      // Keep all canal records in the database and list, but show only
+      // mapped canal lines. Point-only records never create map symbols.
+      if (item.type === 'canal') {
+        return Boolean(
+          item.geometry &&
+          ['LineString', 'MultiLineString'].includes(item.geometry.type) &&
+          Array.isArray(item.geometry.coordinates) &&
+          item.geometry.coordinates.length > 0
+        );
+      }
+
+      return (
+        (
+          item.type === 'lake' &&
+          item.name_hy !== 'Սևանա լիճ' &&
+          item.latitude !== null &&
+          item.longitude !== null
+        ) ||
+        item.geometry ||
+        (
+          item.latitude !== null &&
+          item.longitude !== null
+        )
+      );
+    });
 
   mapped.forEach(item => {
 
