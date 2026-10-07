@@ -2957,7 +2957,7 @@ function applyFilters() {
 
 
     status.textContent =
-      `${regionLabel} · ${layerLabel}${pinnedLabel}։ Քարտեզում՝ ${mapObjects.length} օբյեկտ։`;
+      `${regionLabel} · ${layerLabel}${pinnedLabel}։ Շտեմարանում՝ ${mapObjects.length} օբյեկտ։`;
   }
 }
 
@@ -3640,3 +3640,4 @@ window.addEventListener(
    ========================================= */
 
 loadObjects();
+
