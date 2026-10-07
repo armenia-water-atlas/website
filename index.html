@@ -81,6 +81,17 @@
   .site-footer a:focus-visible {outline:2px solid #247c72;outline-offset:4px;}
   @media(max-width:760px) {.site-footer {padding:14px 16px;}}
 </style>
+<style>
+  .site-footer .atlas-feedback {margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid #dce6e9;}
+  .site-footer .atlas-feedback h2 {margin:0 0 6px;font-size:18px;color:#17685f;line-height:1.4;}
+  .site-footer .feedback-actions {display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+  .site-footer a.feedback-button {display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 18px;border-radius:8px;color:#fff;text-decoration:none;font-size:14px;font-weight:600;line-height:1.4;}
+  .site-footer .feedback-email {background:#17685f;}
+  .site-footer .feedback-viber {background:#6654a7;}
+  .site-footer .feedback-whatsapp {background:#147c47;}
+  .site-footer a.feedback-button:hover {filter:brightness(.92);}
+  .site-footer .feedback-help {font-size:12px;color:#526875;}
+</style>
 </head>
 
 
@@ -442,7 +453,17 @@
 </main>
 
 <footer class="site-footer" aria-label="Կայքի մասին և հեղինակային իրավունք">
-  <p><strong>Հայաստանի ջրային ատլաս</strong> — Հայաստանի ջրային օբյեկտների մասին տեղեկատվական կայք։</p>
+    <div class="atlas-feedback" aria-labelledby="feedback-title">
+    <h2 id="feedback-title">Հետադարձ կապ</h2>
+    <p>Նկատե՞լ եք սխալ կամ թերություն, ունե՞ք առաջարկ։ Գրեք կայքի հեղինակին․ հաղորդագրությանը կարող եք կցել նաև լուսանկարներ։</p>
+    <div class="feedback-actions" aria-label="Հետադարձ կապի եղանակներ">
+      <a class="feedback-button feedback-email" href="mailto:kr108043@yahoo.com?subject=%D5%80%D5%A1%D5%B5%D5%A1%D5%BD%D5%BF%D5%A1%D5%B6%D5%AB%20%D5%BB%D6%80%D5%A1%D5%B5%D5%AB%D5%B6%20%D5%A1%D5%BF%D5%AC%D5%A1%D5%BD%E2%80%A4%20%D5%BD%D5%AD%D5%A1%D5%AC%20%D5%AF%D5%A1%D5%B4%20%D5%A1%D5%BC%D5%A1%D5%BB%D5%A1%D6%80%D5%AF" aria-label="Գրել էլեկտրոնային նամակ">Էլ․ նամակ</a>
+      <a class="feedback-button feedback-viber" href="viber://chat?number=%2B37491900915" aria-label="Բացել Viber-ի զրույցը">Viber</a>
+      <a class="feedback-button feedback-whatsapp" href="https://wa.me/37491900915?text=%D4%B2%D5%A1%D6%80%D6%87%D6%89%20%D5%80%D5%A1%D5%B5%D5%A1%D5%BD%D5%BF%D5%A1%D5%B6%D5%AB%20%D5%BB%D6%80%D5%A1%D5%B5%D5%AB%D5%B6%20%D5%A1%D5%BF%D5%AC%D5%A1%D5%BD%D5%AB%20%D5%BE%D5%A5%D6%80%D5%A1%D5%A2%D5%A5%D6%80%D5%B5%D5%A1%D5%AC%20%D5%B6%D5%AF%D5%A1%D5%BF%D5%A1%D5%BC%D5%B8%D6%82%D5%B4%20%D5%AF%D5%A1%D5%B4%20%D5%A1%D5%BC%D5%A1%D5%BB%D5%A1%D6%80%D5%AF%20%D5%B8%D6%82%D5%B6%D5%A5%D5%B4%D6%89" target="_blank" rel="noopener noreferrer" aria-label="Բացել WhatsApp-ի զրույցը">WhatsApp</a>
+    </div>
+    <p class="feedback-help">Տեքստն ու լուսանկարներն ուղարկեք բացված նամակում կամ զրույցում։ Viber-ի համար անհրաժեշտ է տեղադրված հավելված։</p>
+  </div>
+<p><strong>Հայաստանի ջրային ատլաս</strong> — Հայաստանի ջրային օբյեկտների մասին տեղեկատվական կայք։</p>
   <p>Փորձնական տարբերակ․ շտեմարանը պարբերաբար լրացվում և ճշտվում է։</p>
   <p>© 2026 Հայաստանի ջրային ատլաս։ Կայքի հեղինակային նյութերը մեջբերելիս խնդրում ենք նշել աղբյուրն ու կայքի հղումը։</p>
   <p>Քարտեզ՝ <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>։ Վիքիպեդիայի նյութերն ու պատկերները՝ համապատասխան հեղինակների և արտոնագրերի պայմաններով։</p>
@@ -463,6 +484,7 @@
 </body>
 
 </html>
+
 
 
 
