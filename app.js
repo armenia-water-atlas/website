@@ -111,6 +111,92 @@ L.tileLayer(
 let allObjects = [];
 let markers = [];
 
+// One selection is shared by the list, map clicks and object URLs.
+// A separate, non-interactive overlay keeps mouseout from erasing selection.
+let selectedObjectId = null;
+let selectedRiverLayer = null;
+let selectedRiverLabel = null;
+
+function clearSelectedRiver() {
+  if (selectedRiverLayer) map.removeLayer(selectedRiverLayer);
+  if (selectedRiverLabel) map.removeLayer(selectedRiverLabel);
+  selectedRiverLayer = null;
+  selectedRiverLabel = null;
+}
+
+function selectedRiverLabelPosition(geometry) {
+  const lines = geometry.type === 'LineString'
+    ? [geometry.coordinates]
+    : geometry.coordinates;
+  let longestLine = null;
+  let longestLength = -1;
+  lines.forEach(line => {
+    if (!Array.isArray(line) || line.length < 2) return;
+    let length = 0;
+    for (let i = 1; i < line.length; i += 1) {
+      length += L.latLng(line[i - 1][1], line[i - 1][0])
+        .distanceTo(L.latLng(line[i][1], line[i][0]));
+    }
+    if (length > longestLength) {
+      longestLength = length;
+      longestLine = line;
+    }
+  });
+  if (!longestLine) return null;
+  let remaining = longestLength / 2;
+  for (let i = 1; i < longestLine.length; i += 1) {
+    const a = longestLine[i - 1];
+    const b = longestLine[i];
+    const distance = L.latLng(a[1], a[0]).distanceTo(L.latLng(b[1], b[0]));
+    if (distance >= remaining) {
+      const fraction = distance > 0 ? remaining / distance : 0;
+      return L.latLng(a[1] + (b[1] - a[1]) * fraction,
+        a[0] + (b[0] - a[0]) * fraction);
+    }
+    remaining -= distance;
+  }
+  const end = longestLine[longestLine.length - 1];
+  return L.latLng(end[1], end[0]);
+}
+
+function highlightSelectedRiver() {
+  clearSelectedRiver();
+  if (selectedObjectId === null) return;
+  const item = findObjectById(selectedObjectId);
+  if (!item || item.type !== 'river' || !item.geometry ||
+      !['LineString', 'MultiLineString'].includes(item.geometry.type) ||
+      !findMapLayerByObjectId(item.id)) return;
+
+  if (!map.getPane('selectedRiverPane')) {
+    const pane = map.createPane('selectedRiverPane');
+    pane.style.zIndex = '450';
+    pane.style.pointerEvents = 'none';
+  }
+  selectedRiverLayer = L.geoJSON(item.geometry, {
+    pane: 'selectedRiverPane',
+    interactive: false,
+    style: {
+      color: '#f07816', weight: 7, opacity: 1,
+      lineCap: 'round', lineJoin: 'round'
+    }
+  }).addTo(map);
+
+  const position = selectedRiverLabelPosition(item.geometry);
+  if (position) {
+    const name = document.createElement('span');
+    name.textContent = item.name_hy || 'Անանուն գետ';
+    name.style.color = '#9a4100';
+    name.style.fontWeight = '700';
+    selectedRiverLabel = L.tooltip({
+      permanent: true, direction: 'top', offset: [0, -6],
+      opacity: 1, interactive: false,
+      className: 'selected-river-label'
+    }).setLatLng(position).setContent(name).addTo(map);
+  }
+}
+
+
+
 // Small natural lakes and waterfalls use fixed-size symbols. At low zoom levels
 // nearby symbols are gently displaced in screen space so they do not cover each other.
 // Their true coordinates are preserved separately and used for details/focus.
@@ -148,6 +234,8 @@ function statusLabel(status) {
 
 
 function clearMarkers() {
+
+  clearSelectedRiver();
 
   markers.forEach(marker => {
     map.removeLayer(marker);
@@ -605,7 +693,7 @@ function focusObjectOnMap(
         bounds,
         {
           padding: [35, 35],
-          maxZoom: 11
+          maxZoom: item.type === 'river' ? 14 : 11
         }
       );
 
@@ -1532,6 +1620,7 @@ function renderMarkers(data) {
   });
 
   layoutSmallLakeMarkers();
+  highlightSelectedRiver();
 
   document
     .getElementById(
@@ -1641,6 +1730,9 @@ async function openObjectDetails(
   item,
   updateUrl = true
 ) {
+
+  selectedObjectId = Number(item.id);
+  highlightSelectedRiver();
 
   closeAllTooltips();
 
@@ -1928,6 +2020,9 @@ async function openObjectDetails(
 function closeObjectDetails(
   updateUrl = true
 ) {
+
+  selectedObjectId = null;
+  clearSelectedRiver();
 
   closeAllTooltips();
 
