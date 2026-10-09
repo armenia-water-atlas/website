@@ -3206,6 +3206,17 @@ function updateReservoirOverviewStats() {
   element.textContent = `Ատլասի շտեմարանում կա ${reservoirs.length} ջրամբարի գրառում, որոնցից ${mapped}${suffix} ունեն քարտեզային նշում։`;
 }
 
+function updateSpringOverviewStats() {
+  const element = document.getElementById('spring-overview-count');
+  if (!element) return;
+  const springs = allObjects.filter(item => item.type === 'spring');
+  const mapped = springs.filter(item => Number.isFinite(item.latitude) &&
+    Number.isFinite(item.longitude) && Math.abs(item.latitude) <= 90 &&
+    Math.abs(item.longitude) <= 180).length;
+  const suffix = [6, 7, 8].includes(mapped % 10) ? '-ն' : '-ը';
+  element.textContent = `Ատլասի շտեմարանում կա ${springs.length} աղբյուրի գրառում, որոնցից ${mapped}${suffix} ունեն քարտեզային նշում։`;
+}
+
 async function loadObjects() {
 
   const url =
@@ -3270,6 +3281,7 @@ async function loadObjects() {
     updateWaterfallOverviewStats();
     updateLakeOverviewStats();
     updateReservoirOverviewStats();
+    updateSpringOverviewStats();
 
     // Start with a clean map. Objects appear only after the user
     // selects one or more object types from the menu.
@@ -3829,6 +3841,7 @@ window.addEventListener(
    ========================================= */
 
 loadObjects();
+
 
 
 
