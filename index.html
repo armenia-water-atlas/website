@@ -51,7 +51,7 @@
 
   <!-- General hydrography: styles scoped to the new block -->
   <style>
-    .hydro-overview {grid-column:2;box-sizing:border-box;min-width:0;margin:8px 0 0;padding:clamp(20px,3vw,40px);max-width:none;width:100%;background:#fff;color:#263746;border:1px solid #dce6e9;border-radius:14px;line-height:1.8;}
+    .hydro-overview {grid-column:1 / -1;box-sizing:border-box;min-width:0;margin:8px 0 0;padding:clamp(20px,3vw,40px);max-width:none;width:100%;background:#fff;color:#263746;border:1px solid #dce6e9;border-radius:14px;line-height:1.8;}
     .hydro-overview * {box-sizing:border-box;}
     .hydro-overview h2 {margin:0 0 12px;color:#17685f;font-size:clamp(24px,3vw,34px);line-height:1.4;}
     .hydro-overview h3 {margin:0 0 10px;color:#17685f;font-size:21px;}
@@ -62,7 +62,7 @@
     .hydro-overview .hydro-map-pair {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;width:90%;max-width:774px;margin:24px auto;}
     .hydro-overview .hydro-map-image {display:block;width:100%;aspect-ratio:960 / 931;background:#fff;border-radius:8px;overflow:hidden;}
     .hydro-overview .hydro-map-image img,.hydro-overview .hydro-map-image svg {display:block;width:100%;height:100%;object-fit:contain;}
-    .hydro-overview .hydro-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:24px;}
+    .hydro-overview .hydro-grid {display:grid;grid-template-columns:minmax(0,1fr);gap:20px;margin-top:24px;}
     .hydro-overview article {padding:20px;background:#f5f9fa;border:1px solid #e1eaed;border-radius:10px;min-width:0;}
     
     .hydro-overview figure {margin:0;min-width:0;}
@@ -441,7 +441,7 @@
         <p><a href="https://hy.wikipedia.org/wiki/Հայաստանի_ջրամբարներ" target="_blank" rel="noopener noreferrer">Հայաստանի ջրամբարներ</a>՝ շուրջ 80 ջրամբարի տեղեկատու թիվը, Ախուրյանի և Ապարանի տարողությունները։ <a href="https://www.minenergy.am/page/533" target="_blank" rel="noopener noreferrer">Որոտանի ՀԷԿ-երի համակարգ</a>՝ Սպանդարյանի ընդհանուր տարողությունը՝ 257 մլն մ³, օգտակարը՝ 218 մլն մ³։ <a href="https://mtad.am/news/1651" target="_blank" rel="noopener noreferrer">Ջրային կոմիտեի 2023 թվականի գործունեության պաշտոնական հաշվետվություն</a>՝ ծրագրում ներառված 15 փոքր և միջին ջրամբարները։ Տարողությունները նախագծային ընդհանուր ծավալներն են, ոչ թե տվյալ պահին կուտակված ջրի քանակը։ Շտեմարանի հաշվարկը ներառում է նաև նախատեսվող և կառուցվող ջրամբարները, բացառում է պոչամբարը և անկախ է քարտեզի ֆիլտրերից։</p>
       </details>
     </article>
-    <article><h3>Ստորերկրյա ջրերը</h3><p>Ստորերկրյա ջրերը կարևոր են գետերի սնման և ջրամատակարարման համար։ Արարատյան դաշտում տարածված են արտեզյան ջրերը։</p></article>
+    
     <article id="springs-overview"><h3>ՀՀ աղբյուրները</h3>
       <p>Աղբյուրները ստորերկրյա ջրերի բնական ելքերն են երկրի մակերևույթ։ Ըստ ջրի ելքի բնույթի՝ լինում են վերընթաց և վարընթաց, ըստ ջերմաստիճանի՝ սառը, գոլ, տաք և գերտաք, ըստ հոսքի տևողության՝ մշտական և ժամանակավոր, իսկ ըստ հանքայնացման՝ քաղցրահամ և հանքային։ Կարստային տարածքներում հանդիպում են մեծ ջրի ելք ունեցող աղբյուրներ՝ վոկլյուզներ, իսկ երիտասարդ հրաբխականության շրջաններում՝ տաք աղբյուրներ և գեյզերներ։</p>
       <p>Տեղեկատու տվյալներով՝ Հայաստանում կա մոտ 10 000 բնական աղբյուր։ Դրանք մեծ նշանակություն ունեն կենցաղային և արդյունաբերական ջրամատակարարման ու ոռոգման համար։ Աղբյուրներով հարուստ են լեռնային շրջանները․ հրաբխային բարձրավանդակում և միջլեռնային գոգավորություններում կան խոշոր աղբյուրներ՝ 100–2500 լ/վ ջրի ելքով։ Մեծ համբավ ունեն Ջերմուկի և Բջնիի հանքային ջրերը։</p>
@@ -500,6 +500,7 @@
 </body>
 
 </html>
+
 
 
 
