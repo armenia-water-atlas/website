@@ -10,6 +10,39 @@
   --radius: 18px;
 }
 
+.atlas-navigation { margin-top: 5px; font-size: 14px; }
+.atlas-navigation a { color: var(--accent); text-underline-offset: 3px; }
+.hydro-overview .river-overview { grid-column: 1 / -1; }
+.river-sources { font-size: 13px; color: var(--muted); }
+.river-sources summary { cursor: pointer; color: var(--accent); margin-bottom: 10px; }
+.contact-page main { max-width: 940px; margin: 24px auto; padding: 0 20px 40px; }
+.contact-page h1 { font-size: clamp(26px, 4vw, 38px); margin: 0 0 12px; }
+.contact-page h2 { font-size: 22px; color: var(--accent); margin-top: 0; }
+.contact-page .contact-intro { color: var(--muted); max-width: 720px; }
+.contact-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-top: 22px; box-shadow: var(--shadow); }
+.contact-methods { display: flex; flex-wrap: wrap; gap: 10px; }
+.contact-methods a, .contact-actions button { display: inline-block; padding: 10px 16px; border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); background: white; text-decoration: none; font: inherit; cursor: pointer; }
+.contact-methods a:hover, .contact-actions button:hover { background: var(--accent-soft); }
+.contact-form { display: grid; gap: 16px; }
+.contact-form label { display: grid; gap: 6px; font-weight: 600; }
+.contact-form input, .contact-form select, .contact-form textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #aebfc5; border-radius: 8px; background: white; color: var(--text); font: inherit; font-weight: 400; }
+.contact-form textarea { resize: vertical; min-height: 170px; }
+.contact-form .contact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.contact-help { font-size: 14px; color: var(--muted); margin: 0; overflow-wrap: anywhere; }
+.contact-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.contact-actions button.primary { color: white; background: var(--accent); }
+.contact-actions button:disabled { opacity: .6; cursor: wait; }
+.contact-page :focus-visible { outline: 3px solid #e58b36; outline-offset: 3px; }
+.contact-page #contact-status { min-height: 1.5em; color: var(--accent); margin: 0; }
+.contact-page #file-list { margin: 0; padding-left: 22px; overflow-wrap: anywhere; }
+.contact-page .site-footer { text-align: center; padding: 20px; font-size: 13px; color: var(--muted); }
+@media (max-width: 600px) {
+  .contact-page main { padding: 0 12px 28px; margin-top: 20px; }
+  .contact-card { padding: 18px; }
+  .contact-form .contact-row { grid-template-columns: 1fr; }
+  .contact-actions button { width: 100%; }
+}
+
 
 /* =========================================
    GENERAL
@@ -842,3 +875,4 @@ header.site-header p { font-size: 13px; }
   .atlas-layout { display: block; padding: 8px; }
   .sidebar { margin-bottom: 8px; }
 }
+
