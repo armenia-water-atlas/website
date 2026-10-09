@@ -3145,6 +3145,21 @@ function updateRiverOverviewStats() {
   element.textContent = `Ատլասի շտեմարանում կա ${rivers.length} գետի գրառում, որոնցից ${outlined}-ն ունեն քարտեզային ուրվագիծ։`;
 }
 
+function updateWaterfallOverviewStats() {
+  const element = document.getElementById('waterfall-overview-count');
+  if (!element) return;
+  const waterfalls = allObjects.filter(item => item.type === 'waterfall');
+  const hasPoint = item => Number.isFinite(item.latitude) &&
+    Number.isFinite(item.longitude) && Math.abs(item.latitude) <= 90 &&
+    Math.abs(item.longitude) <= 180;
+  // Retain the verified snapshot when an unmapped object's geometry could not be read.
+  if (waterfalls.some(item => !hasPoint(item) && geometryLoadFailures.has(item.id))) return;
+  const mapped = waterfalls.filter(item =>
+    hasPoint(item) || getWaterfallPoints(item).length > 0
+  ).length;
+  element.textContent = `Ատլասի շտեմարանում կա ${waterfalls.length} ջրվեժի գրառում, որոնցից ${mapped}-ը ունեն քարտեզային նշում։`;
+}
+
 async function loadObjects() {
 
   const url =
@@ -3206,6 +3221,7 @@ async function loadObjects() {
 
 
     updateRiverOverviewStats();
+    updateWaterfallOverviewStats();
 
     // Start with a clean map. Objects appear only after the user
     // selects one or more object types from the menu.
@@ -3765,5 +3781,6 @@ window.addEventListener(
    ========================================= */
 
 loadObjects();
+
 
 
