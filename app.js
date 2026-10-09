@@ -109,6 +109,7 @@ L.tileLayer(
 
 
 let allObjects = [];
+const geometryLoadFailures = new Set();
 let markers = [];
 
 // One selection is shared by the list, map clicks and object URLs.
@@ -3098,7 +3099,9 @@ async function loadObjectGeometry(
     }
 
 
-    return await response.json();
+    const geometry = await response.json();
+    geometryLoadFailures.delete(objectId);
+    return geometry;
 
 
   } catch (error) {
@@ -3108,6 +3111,7 @@ async function loadObjectGeometry(
       error
     );
 
+    geometryLoadFailures.add(objectId);
     return null;
   }
 }
@@ -3116,6 +3120,30 @@ async function loadObjectGeometry(
 /* =========================================
    LOAD OBJECTS
    ========================================= */
+
+function hasRiverOutline(geometry) {
+  if (!geometry) return false;
+  if (geometry.type === 'Feature') return hasRiverOutline(geometry.geometry);
+  if (geometry.type === 'GeometryCollection') {
+    return Array.isArray(geometry.geometries) && geometry.geometries.some(hasRiverOutline);
+  }
+  const validLine = line => Array.isArray(line) && line.length >= 2 &&
+    line.every(point => Array.isArray(point) && Number.isFinite(point[0]) &&
+      Number.isFinite(point[1]) && Math.abs(point[0]) <= 180 && Math.abs(point[1]) <= 90);
+  if (geometry.type === 'LineString') return validLine(geometry.coordinates);
+  return geometry.type === 'MultiLineString' && Array.isArray(geometry.coordinates) &&
+    geometry.coordinates.some(validLine);
+}
+
+function updateRiverOverviewStats() {
+  const element = document.getElementById('river-overview-count');
+  if (!element) return;
+  const rivers = allObjects.filter(item => item.type === 'river');
+  // Keep the dated, verified snapshot if any river geometry could not be read.
+  if (rivers.some(item => geometryLoadFailures.has(item.id))) return;
+  const outlined = rivers.filter(item => hasRiverOutline(item.geometry)).length;
+  element.textContent = `Ատլասի շտեմարանում կա ${rivers.length} գետի գրառում, որոնցից ${outlined}-ն ունեն քարտեզային ուրվագիծ։`;
+}
 
 async function loadObjects() {
 
@@ -3176,6 +3204,8 @@ async function loadObjects() {
       )
     );
 
+
+    updateRiverOverviewStats();
 
     // Start with a clean map. Objects appear only after the user
     // selects one or more object types from the menu.
@@ -3735,4 +3765,5 @@ window.addEventListener(
    ========================================= */
 
 loadObjects();
+
 
