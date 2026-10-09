@@ -3160,6 +3160,29 @@ function updateWaterfallOverviewStats() {
   element.textContent = `Ատլասի շտեմարանում կա ${waterfalls.length} ջրվեժի գրառում, որոնցից ${mapped}-ը ունեն քարտեզային նշում։`;
 }
 
+function updateLakeOverviewStats() {
+  const element = document.getElementById('lake-overview-count');
+  if (!element) return;
+  const lakes = allObjects.filter(item => item.type === 'lake');
+  const hasPoint = item => Number.isFinite(item.latitude) &&
+    Number.isFinite(item.longitude) && Math.abs(item.latitude) <= 90 &&
+    Math.abs(item.longitude) <= 180;
+  const hasGeometry = geometry => {
+    if (!geometry) return false;
+    if (geometry.type === 'Feature') return hasGeometry(geometry.geometry);
+    if (geometry.type === 'GeometryCollection') {
+      return Array.isArray(geometry.geometries) && geometry.geometries.some(hasGeometry);
+    }
+    return ['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon']
+      .includes(geometry.type) && Array.isArray(geometry.coordinates) &&
+      geometry.coordinates.length > 0;
+  };
+  if (lakes.some(item => !hasPoint(item) && geometryLoadFailures.has(item.id))) return;
+  const mapped = lakes.filter(item => hasPoint(item) || hasGeometry(item.geometry)).length;
+  const suffix = mapped % 10 === 8 ? '-ն' : '-ը';
+  element.textContent = `Ատլասի շտեմարանում կա ${lakes.length} լճի գրառում, որոնցից ${mapped}${suffix} ունեն քարտեզային նշում։`;
+}
+
 async function loadObjects() {
 
   const url =
@@ -3222,6 +3245,7 @@ async function loadObjects() {
 
     updateRiverOverviewStats();
     updateWaterfallOverviewStats();
+    updateLakeOverviewStats();
 
     // Start with a clean map. Objects appear only after the user
     // selects one or more object types from the menu.
@@ -3781,6 +3805,7 @@ window.addEventListener(
    ========================================= */
 
 loadObjects();
+
 
 
 
