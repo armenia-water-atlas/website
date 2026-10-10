@@ -1,94 +1,28 @@
 'use strict';
-
-const contactForm = document.getElementById('contact-form');
-const contactFiles = document.getElementById('contact-files');
-const contactStatus = document.getElementById('contact-status');
-const contactShare = document.getElementById('share-message');
-const contactTopic = document.getElementById('contact-topic');
-const requestedTopic = new URLSearchParams(location.search).get('topic');
-if (Array.from(contactTopic.options).some(option => option.value === requestedTopic)) {
-  contactTopic.value = requestedTopic;
-}
-
-function preparedContactMessage() {
-  const value = id => document.getElementById(id).value.trim();
-  const topic = contactTopic.options[contactTopic.selectedIndex].textContent;
-  const lines = ['Հայաստանի ջրային ատլաս', `Թեմա՝ ${topic}`];
-  if (value('contact-object')) lines.push(`Օբյեկտ՝ ${value('contact-object')}`);
-  if (value('contact-name')) lines.push(`Անուն՝ ${value('contact-name')}`);
-  if (value('contact-email')) lines.push(`Պատասխանի հասցե՝ ${value('contact-email')}`);
-  lines.push('', value('contact-message'));
-  return { title: `Հայաստանի ջրային ատլաս․ ${topic}`, text: lines.join('\n') };
-}
-
-function validContactMessage() {
-  const message = document.getElementById('contact-message');
-  message.setCustomValidity(message.value.trim() ? '' : 'Խնդրում ենք գրել հաղորդագրությունը։');
-  return contactForm.reportValidity();
-}
-document.getElementById('contact-message').addEventListener('input', event => event.target.setCustomValidity(''));
-
-contactFiles.addEventListener('change', () => {
-  const list = document.getElementById('file-list');
-  list.replaceChildren();
-  for (const file of contactFiles.files) {
-    const row = document.createElement('li');
-    row.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} ՄԲ)`;
-    list.append(row);
-  }
-  contactStatus.textContent = contactFiles.files.length
-    ? 'Ֆայլերը ընտրված են։ Դրանք դեռ չեն ուղարկվել։' : '';
-});
-
-contactForm.addEventListener('submit', event => {
-  event.preventDefault();
-  if (!validContactMessage()) return;
-  const message = preparedContactMessage();
-  contactStatus.textContent = 'Ավարտեք ուղարկումը էլ․ փոստի հավելվածում։ Ընտրված ֆայլերը կցեք այնտեղ։';
-  location.href = `mailto:kr108043@yahoo.com?subject=${encodeURIComponent(message.title)}&body=${encodeURIComponent(message.text)}`;
-});
-
-document.getElementById('send-whatsapp').addEventListener('click', () => {
-  if (!validContactMessage()) return;
-  const message = preparedContactMessage();
-  window.open(`https://wa.me/37491900915?text=${encodeURIComponent(message.text)}`, '_blank', 'noopener,noreferrer');
-  contactStatus.textContent = 'Ավարտեք ուղարկումը WhatsApp-ում։ Ընտրված ֆայլերը կցեք զրույցին։';
-});
-
-contactShare.addEventListener('click', async () => {
-  if (!validContactMessage()) return;
-  const data = preparedContactMessage();
-  const files = Array.from(contactFiles.files);
-  if (!navigator.share) {
-    contactStatus.textContent = 'Այս դիտարկիչը չի աջակցում «Կիսվել» հնարավորությանը։ Օգտվեք էլ․ փոստից կամ WhatsApp-ից և ֆայլերը կցեք այնտեղ։';
-    return;
-  }
-  if (files.length) {
-    data.files = files;
-    if (!navigator.canShare || !navigator.canShare(data)) {
-      contactStatus.textContent = 'Այս սարքով ընտրված ֆայլերի փոխանցումը չի աջակցվում։ Օգտվեք էլ․ փոստից կամ WhatsApp-ից և ֆայլերը կցեք այնտեղ։';
-      return;
-    }
-  }
-  contactShare.disabled = true;
-  try {
-    await navigator.share(data);
-    contactStatus.textContent = 'Հաղորդագրությունը փոխանցվել է ընտրված հավելվածին։ Ստուգեք հասցեատիրոջը և ուղարկումը հավելվածում։';
-  } catch (error) {
-    contactStatus.textContent = error.name === 'AbortError'
-      ? 'Կիսվելը չեղարկվել է։ Հաղորդագրությունն ու ընտրված ֆայլերը պահպանվել են այս էջում։'
-      : 'Չհաջողվեց բացել «Կիսվել» պատուհանը։ Օգտվեք էլ․ փոստից կամ WhatsApp-ից։';
-  } finally {
-    contactShare.disabled = false;
-  }
-});
-
-document.getElementById('copy-message').addEventListener('click', async () => {
-  if (!validContactMessage()) return;
-  try {
-    await navigator.clipboard.writeText(preparedContactMessage().text);
-    contactStatus.textContent = 'Տեքստը պատճենված է։ Տեղադրեք այն նամակում կամ զրույցում։ Ֆայլերը կցեք առանձին։';
-  } catch (error) {
-    contactStatus.textContent = 'Դիտարկիչը չի թույլատրել պատճենել տեքստը։ Կարող եք ընտրել և պատճենել հաղորդագրությունն ինքնուրույն։';
-  }
-});
+(() => {
+const A=AtlasFeedback,$=id=>document.getElementById(id),form=$('contact-form');
+let objects=[],selected=null,map,marker,source='manual',accuracy=null,requestId=crypto.randomUUID(),receipt=null,uploads=[];
+function report(){return {kind:$('kind').value,object_type:$('object-type').value,object_name:$('object-name').value.trim(),local_name:$('local-name').value.trim(),settlement:$('settlement').value.trim(),observed_on:$('observed-on').value||null,latitude:$('latitude').value===''?null:Number($('latitude').value),longitude:$('longitude').value===''?null:Number($('longitude').value),location_source:source,accuracy_m:accuracy,at_object:$('at-object').checked,water_state:$('water-state').value,description:$('description').value.trim(),reporter_name:$('reporter-name').value.trim(),reporter_phone:$('reporter-phone').value.trim(),consent:$('consent').checked,related_object_id:selected?.id||null};}
+function preview(){$('message-preview').textContent=A.preparedMessage(report());}
+function status(message,error=false){$('contact-status').textContent=message;$('contact-status').classList.toggle('error',error);}
+function setPoint(lat,lon,origin='manual',acc=null){$('latitude').value=Number(lat).toFixed(6);$('longitude').value=Number(lon).toFixed(6);source=origin;accuracy=acc;if(map){if(!marker){marker=L.marker([lat,lon],{draggable:true}).addTo(map);marker.on('dragend',()=>{const p=marker.getLatLng();setPoint(p.lat,p.lng,'map');});}else marker.setLatLng([lat,lon]);map.setView([lat,lon],Math.max(map.getZoom(),12));}preview();}
+try{if(window.L){map=L.map('location-map').setView([40.18,44.51],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);map.on('click',e=>setPoint(e.latlng.lat,e.latlng.lng,'map'));}else throw Error();}catch{$('location-map').hidden=true;$('map-note').textContent='Քարտեզը հասանելի չէ։ Կոորդինատները կարող եք լրացնել ձեռքով կամ օգտագործել ձեր տեղադրությունը։';}
+$('locate').onclick=()=>{if(!navigator.geolocation){$('location-status').textContent='Տեղադրությունը հասանելի չէ այս սարքում։';return;}$('locate').disabled=true;$('location-status').textContent='Որոշվում է տեղադրությունը…';navigator.geolocation.getCurrentPosition(p=>{setPoint(p.coords.latitude,p.coords.longitude,'gps',p.coords.accuracy);$('location-status').textContent='Տեղադրությունը որոշված է։ Մոտավոր ճշտությունը՝ '+Math.round(p.coords.accuracy)+' մ։ Նշեք՝ արդյոք օբյեկտի մոտ եք։';$('locate').disabled=false;},()=>{$('location-status').textContent='Տեղադրությունը չստացվեց։ Թույլատրեք դրա օգտագործումը կամ կետը լրացրեք ձեռքով։';$('locate').disabled=false;},{enableHighAccuracy:true,timeout:15000,maximumAge:0});};
+$('apply-coordinates').onclick=()=>{const p=A.parseCoordinates($('coordinate-paste').value);if(p){setPoint(p.latitude,p.longitude);$('location-status').textContent='Կոորդինատները կիրառված են։';}else $('location-status').textContent='Գրեք լայնությունը և երկայնությունը՝ օրինակ 40.123456, 44.123456։';};
+$('clear-location').onclick=()=>{$('latitude').value='';$('longitude').value='';$('coordinate-paste').value='';source='manual';accuracy=null;if(marker){marker.remove();marker=null;}$('location-status').textContent='';preview();};
+for(const id of ['latitude','longitude'])$(id).addEventListener('change',()=>{source='manual';accuracy=null;const p=A.coordinates($('latitude').value,$('longitude').value);if(p)setPoint(p.latitude,p.longitude);});
+function search(){const q=$('object-search').value.trim().toLocaleLowerCase();$('object-results').replaceChildren();if(!q)return;for(const o of objects.filter(o=>o.type===$('object-type').value&&(o.name_hy||'').toLocaleLowerCase().includes(q)).slice(0,12)){const b=document.createElement('button');b.type='button';b.textContent=(o.name_hy||'Առանց անվան')+' · '+(o.province||'')+' · #'+o.id;b.onclick=()=>{selected=o;$('chosen-object').textContent='Ընտրված է՝ '+b.textContent;$('object-name').value=o.name_hy||'';if(A.coordinates(o.latitude,o.longitude))setPoint(o.latitude,o.longitude,'existing');$('object-results').replaceChildren();preview();};$('object-results').append(b);}}
+$('object-search').oninput=search;
+$('clear-object').onclick=()=>{selected=null;$('chosen-object').textContent='';$('object-search').value='';$('object-results').replaceChildren();preview();};
+function kindChanged(){const kind=$('kind').value;$('existing-wrap').hidden=!['correction','addition'].includes(kind);if($('existing-wrap').hidden)$('clear-object').click();$('object-type').required=kind!=='general';preview();}
+$('kind').addEventListener('change',kindChanged);$('object-type').addEventListener('change',()=>{$('clear-object').click();search();});
+$('photos').onchange=()=>{$('photo-list').replaceChildren();const files=Array.from($('photos').files);const error=A.validateFiles(files);status(error,!!error);for(const f of files){const li=document.createElement('li');li.textContent=f.name+' ('+(f.size/1048576).toFixed(1)+' ՄԲ)';$('photo-list').append(li);}};
+form.addEventListener('input',preview);
+async function sendPhotos(){let failed=0;for(const item of uploads){if(item.done)continue;try{await A.fetchJSON('/storage/v1/object/feedback-photos/'+receipt.id+'/'+receipt.upload_token+'/'+item.name,{method:'POST',body:item.file,headers:{'Content-Type':item.file.type,'x-upsert':'false'}});item.done=true;}catch{failed++;}}$('receipt-photo-status').textContent=uploads.length?(failed?'Հաղորդումը պահպանված է, բայց '+failed+' լուսանկար չփոխանցվեց։ Կարող եք կրկին փորձել՝ այս էջը բաց պահելով։':'Բոլոր '+uploads.length+' լուսանկարները փոխանցված են ստուգողին։'):'Լուսանկարներ չեն կցվել։';$('retry-photos').hidden=!failed;}
+form.onsubmit=async e=>{e.preventDefault();if(receipt)return;if($('website').value)return;const r=report(),files=Array.from($('photos').files),error=A.validateReport(r)||A.validateFiles(files);if(error){status(error,true);return;}$('submit-report').disabled=true;status('Հաղորդումն ուղարկվում է…');try{receipt=await A.rpc('submit_feedback_report',{p_request_id:requestId,p_report:r});uploads=files.map(file=>({file,name:crypto.randomUUID()+'.'+({ 'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[file.type]),done:false}));$('receipt-number').textContent='#'+receipt.report_number;$('receipt').hidden=false;for(const input of form.querySelectorAll('input,select,textarea'))input.disabled=true;$('submit-report').hidden=true;status('Շնորհակալություն։ Ձեր տեղեկությունը պահպանվել է և սպասում է ստուգման։');await sendPhotos();}catch(error){status(A.showError(error),true);$('submit-report').disabled=false;}};
+$('retry-photos').onclick=async()=>{$('retry-photos').disabled=true;try{await sendPhotos();}finally{$('retry-photos').disabled=false;}};
+$('new-report').onclick=()=>{form.reset();for(const input of form.querySelectorAll('input,select,textarea'))input.disabled=false;receipt=null;uploads=[];requestId=crypto.randomUUID();$('receipt').hidden=true;$('submit-report').hidden=false;$('submit-report').disabled=false;$('photo-list').replaceChildren();$('clear-object').click();$('clear-location').click();status('');defaults();kindChanged();form.scrollIntoView({behavior:'smooth'});};
+function defaults(){const date=new Date();const today=[date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-');$('observed-on').value=today;$('observed-on').max=today;}
+const params=new URLSearchParams(location.search),topic=params.get('topic');if(A.TYPES[topic])$('object-type').value=topic;
+defaults();kindChanged();A.loadObjects().then(rows=>{objects=rows;search();}).catch(()=>{$('object-search').placeholder='Որոնումը հասանելի չէ։ Անունը նշեք ստորև։';});
+})();
