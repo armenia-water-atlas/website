@@ -876,3 +876,36 @@ header.site-header p { font-size: 13px; }
   .sidebar { margin-bottom: 8px; }
 }
 
+
+/* Tsovinar emblem and responsive atlas header. */
+header.site-header .site-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+header.site-header .site-logo-link {
+  display: block;
+  flex: 0 0 auto;
+  border-radius: 8px;
+}
+header.site-header .site-logo-link:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+header.site-header .site-logo {
+  display: block;
+  width: 136px;
+  height: auto;
+}
+header.site-header .site-header-copy { min-width: 0; }
+@media (max-width: 760px) {
+  header.site-header .site-header-inner { gap: 12px; }
+  header.site-header .site-logo { width: 100px; }
+  header.site-header .site-title { font-size: 21px; line-height: 1.25; }
+}
+@media (max-width: 420px) {
+  header.site-header .site-header-inner { gap: 10px; }
+  header.site-header .site-logo { width: 80px; }
+  header.site-header .site-title { font-size: 18px; }
+  header.site-header .site-subtitle { font-size: 12px; }
+}
