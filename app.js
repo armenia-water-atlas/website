@@ -48,8 +48,7 @@ const ARMENIA_CENTER = [
 const ARMENIA_ZOOM = 7.5;
 
 // Approximate geographic envelope of the Republic of Armenia.
-// We use this when a category is selected so the whole country remains visible,
-// even if that category has objects only in one part of Armenia.
+// Used for the initial view and the explicit clear-map action.
 const ARMENIA_BOUNDS = L.latLngBounds(
   [38.82, 43.40],
   [41.32, 46.70]
@@ -1767,14 +1766,8 @@ function renderMarkers(data) {
     .textContent =
       `Քարտեզագրված՝ ${mapped.length}`;
 
-  if (getObjectIdFromUrl()) {
-    return;
-  }
-
-  // Category selection must never crop Armenia to the extent of the
-  // selected objects. Keep the whole country visible so empty regions are
-  // immediately recognizable as regions without objects of this category.
-  showArmeniaOverview();
+  // Redrawing layers must preserve the user's current center and zoom.
+  // Only explicit navigation actions may change the viewport.
 }
 
 
@@ -2154,7 +2147,7 @@ function closeObjectDetails(
   }
 
 
-  showArmeniaOverview();
+  // Closing details keeps the current map view.
 }
 
 
@@ -3041,13 +3034,13 @@ function applyFilters() {
     );
 
 
-  // Search covers all object types in the selected territory, including
-  // records without coordinates. Layer checkboxes apply when not searching.
-  const activeLayerObjects = search
-    ? regionObjects
-    : regionObjects.filter(item => selectedTypes.includes(item.type));
-
-  const layerObjects = activeLayerObjects.filter(item => matchesAtlasSearch(item, search));
+  // Keep search results visible while independently adding enabled layers.
+  // A river search must not restrict the added hydropower layer to its name.
+  const searchObjects = search
+    ? regionObjects.filter(item => matchesAtlasSearch(item, search))
+    : [];
+  const enabledLayerObjects = regionObjects.filter(item => selectedTypes.includes(item.type));
+  const layerObjects = mergeObjectsById(searchObjects, enabledLayerObjects);
 
 
   // Explicitly opened objects remain pinned only while they belong to the
@@ -3070,18 +3063,8 @@ function applyFilters() {
     );
 
 
-  // The side list follows the same territory + search scope.
-  const listObjects =
-    mapObjects.filter(
-      item =>
-        matchesSelectedRegion(
-          item,
-          selectedRegion
-        ) &&
-        (
-          matchesAtlasSearch(item, search)
-        )
-    );
+  // The side list includes search results and every enabled map layer.
+  const listObjects = mapObjects.filter(item => matchesSelectedRegion(item, selectedRegion));
 
 
   renderList(
@@ -3098,7 +3081,7 @@ function applyFilters() {
 
   if (
     search &&
-    layerObjects.length === 0
+    searchObjects.length === 0
   ) {
     showSearchEmptyMessage();
   } else {
@@ -3129,7 +3112,7 @@ function applyFilters() {
   } else if (search) {
 
     status.textContent =
-      `${regionLabel} · Որոնում բոլոր օբյեկտներում։ Գտնվել է՝ ${layerObjects.length}։`;
+      `${regionLabel} · Որոնմամբ գտնվել է՝ ${searchObjects.length}։ Միացված է ${selectedTypes.length} շերտ։ Ընդամենը՝ ${mapObjects.length} օբյեկտ։`;
 
   } else {
 
@@ -3915,5 +3898,6 @@ renderList([]);
 renderMarkers([]);
 document.getElementById('status').textContent = 'Տվյալները բեռնվում են…';
 loadObjects();
+
 
 
