@@ -725,6 +725,79 @@ function focusObjectOnMap(
    MAP HOVER INFO
    ========================================= */
 
+// Shared by the object details and the map hover card.
+function hydropowerDisplayFields(item) {
+  const source = item.hydropower_source_data?.psrc_2026_07_01 || {};
+  const hasNumber = value => value !== null && value !== undefined &&
+    value !== '' && Number.isFinite(Number(value));
+  const withUnit = (value, unit) => hasNumber(value)
+    ? `${new Intl.NumberFormat('hy-AM', { maximumFractionDigits: 4 }).format(Number(value))} ${unit}`
+    : null;
+  const fields = [
+    ['Գետ', item.river_name],
+    ['Ջրաղբյուր', item.water_source],
+    ['Կասկադ', item.cascade_name],
+    ['Տեղադրված հզորություն', withUnit(item.installed_capacity_mw, 'ՄՎտ')],
+    ['Առկա հզորություն', withUnit(item.available_capacity_mw, 'ՄՎտ')]
+  ];
+
+  const projected = item.status === 'construction' || item.status === 'planned';
+  const annualGeneration = item.annual_generation_gwh ??
+    (projected ? source.projected_annual_generation_gwh : null);
+  fields.push([
+    projected ? 'Տարեկան նախագծային արտադրություն' : 'Միջին տարեկան արտադրություն',
+    withUnit(annualGeneration, 'ԳՎտժ')
+  ]);
+
+  const group = item.delivery_group;
+  const members = group
+    ? allObjects.filter(object => object.type === 'hydropower' &&
+        object.delivery_group === group).sort((a, b) => a.id - b.id)
+    : [];
+  const groupRecord = members.find(object => hasNumber(object.group_average_delivery_gwh));
+  const groupAverage = groupRecord?.group_average_delivery_gwh ??
+    item.group_average_delivery_gwh ?? source.group_average_delivery_gwh;
+  const average = group ? groupAverage : item.average_delivery_gwh;
+  const start = item.average_delivery_period_start ??
+    groupRecord?.average_delivery_period_start;
+  const end = item.average_delivery_period_end ??
+    groupRecord?.average_delivery_period_end;
+
+  if (hasNumber(average)) {
+    fields.push([
+      group ? 'Խմբի բազմամյա միջին օգտակար առաքում' : 'Բազմամյա միջին օգտակար առաքում',
+      withUnit(average, 'ԳՎտժ')
+    ]);
+    if (hasNumber(start) && hasNumber(end)) {
+      fields.push(['Առաքման ժամանակահատված', `${start}–${end} թթ.`]);
+    }
+    if (group) {
+      const names = members.map(object => object.name_hy).filter(Boolean);
+      fields.push([
+        'Խմբային ցուցանիշի պարզաբանում',
+        names.length
+          ? `Ընդհանուր ցուցանիշ՝ ${names.join(', ')} ՀԷԿ-երի համար։ Անհատական առաքումը չի առանձնացվել։`
+          : 'Խմբի ընդհանուր ցուցանիշ։ Անհատական առաքումը չի առանձնացվել։'
+      ]);
+    }
+  }
+
+  fields.push(
+    ['2025 թ. փաստացի օգտակար առաքում', withUnit(item.actual_delivery_gwh_2025, 'ԳՎտժ')],
+    ['ՀԷԿ-ի տեսակ', item.hydropower_kind],
+    ['Աշխատանքի ռեժիմ', item.operation_regime],
+    ['Օպերատոր', item.operator]
+  );
+  return fields.filter(([, value]) => value !== null && value !== undefined && value !== '');
+}
+
+function escapeHydropowerHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[character]);
+}
+
+
 function buildHoverInfo(item) {
 
   let html =
@@ -802,16 +875,19 @@ function buildHoverInfo(item) {
   }
 
 
-  if (
-    item.type === 'hydropower' &&
-    item.installed_capacity_mw !== null
-  ) {
-
-    html +=
-      `<div class="popup-row">` +
-      `<strong>Հզորություն՝</strong> ` +
-      `${item.installed_capacity_mw} ՄՎտ` +
-      `</div>`;
+  if (item.type === 'hydropower') {
+    const hoverLabels = new Set([
+      'Տեղադրված հզորություն', 'Ջրաղբյուր',
+      'Բազմամյա միջին օգտակար առաքում',
+      'Խմբի բազմամյա միջին օգտակար առաքում',
+      'Առաքման ժամանակահատված'
+    ]);
+    hydropowerDisplayFields(item).forEach(([label, value]) => {
+      if (hoverLabels.has(label)) {
+        html += `<div class="popup-row"><strong>${escapeHydropowerHtml(label)}՝</strong> ` +
+          `${escapeHydropowerHtml(value)}</div>`;
+      }
+    });
   }
 
 
@@ -1917,67 +1993,9 @@ async function openObjectDetails(
 
 
   if (item.type === 'hydropower') {
-
-    addDetailField(
-      dataContainer,
-      'Գետ',
-      item.river_name
-    );
-
-
-    addDetailField(
-      dataContainer,
-      'Կասկադ',
-      item.cascade_name
-    );
-
-
-    addDetailField(
-      dataContainer,
-      'Տեղադրված հզորություն',
-      item.installed_capacity_mw !== null
-        ? `${item.installed_capacity_mw} ՄՎտ`
-        : null
-    );
-
-
-    addDetailField(
-      dataContainer,
-      'Առկա հզորություն',
-      item.available_capacity_mw !== null
-        ? `${item.available_capacity_mw} ՄՎտ`
-        : null
-    );
-
-
-    addDetailField(
-      dataContainer,
-      'Միջին տարեկան արտադրություն',
-      item.annual_generation_gwh !== null
-        ? `${item.annual_generation_gwh} ԳՎտժ`
-        : null
-    );
-
-
-    addDetailField(
-      dataContainer,
-      'ՀԷԿ-ի տեսակ',
-      item.hydropower_kind
-    );
-
-
-    addDetailField(
-      dataContainer,
-      'Աշխատանքի ռեժիմ',
-      item.operation_regime
-    );
-
-
-    addDetailField(
-      dataContainer,
-      'Օպերատոր',
-      item.operator
-    );
+    hydropowerDisplayFields(item).forEach(([label, value]) => {
+      addDetailField(dataContainer, label, value);
+    });
   }
 
 
@@ -3232,7 +3250,7 @@ async function loadObjects() {
 
   const url =
     `${SUPABASE_URL}/rest/v1/water_objects` +
-    `?select=id,type,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m,river_name,cascade_name,installed_capacity_mw,available_capacity_mw,annual_generation_gwh,hydropower_kind,operation_regime,operator` +
+    `?select=id,type,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m,river_name,cascade_name,installed_capacity_mw,available_capacity_mw,annual_generation_gwh,hydropower_kind,operation_regime,operator,water_source,average_delivery_gwh,average_delivery_period_start,average_delivery_period_end,delivery_group,group_average_delivery_gwh,actual_delivery_gwh_2025,hydropower_source_data` +
     `&order=name_hy.asc`;
 
 
@@ -3853,6 +3871,7 @@ window.addEventListener(
    ========================================= */
 
 loadObjects();
+
 
 
 
