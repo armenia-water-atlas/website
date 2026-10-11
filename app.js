@@ -1274,12 +1274,72 @@ function getWaterfallPoints(item) {
   }).map(point => L.latLng(point[1], point[0]));
 }
 
+// Load geometry only for visible objects, using batched requests.
+const geometryReadyIds = new Set();
+const geometryPendingIds = new Set();
+
+function needsAtlasGeometry(item) {
+  return ['river', 'canal', 'waterfall', 'reservoir'].includes(item.type) ||
+    (item.type === 'lake' && (item.name_hy === 'Սևանա լիճ' || isOutlinedLake(item)));
+}
+
+function queueAtlasGeometry(items) {
+  const pending = items.filter(item => needsAtlasGeometry(item) &&
+    !geometryReadyIds.has(item.id) && !geometryPendingIds.has(item.id));
+  pending.forEach(item => geometryPendingIds.add(item.id));
+  for (let offset = 0; offset < pending.length; offset += 150) {
+    const batch = pending.slice(offset, offset + 150);
+    loadAtlasGeometryBatch(batch);
+  }
+}
+
+async function loadAtlasGeometryBatch(batch) {
+  try {
+    const ids = batch.map(item => Number(item.id)).join(',');
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/water_objects?select=id,geometry&id=in.(${ids})`,
+      { headers: { apikey: SUPABASE_KEY } }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const records = await response.json();
+    const byId = new Map(records.map(item => [Number(item.id), item.geometry]));
+    batch.forEach(item => {
+      if (!byId.has(Number(item.id))) throw new Error(`Missing geometry record ${item.id}`);
+    });
+    batch.forEach(item => {
+      item.geometry = byId.get(Number(item.id)) || null;
+      geometryLoadFailures.delete(item.id);
+    });
+  } catch (error) {
+    batch.forEach(item => geometryLoadFailures.add(item.id));
+    console.error('Map geometry load error:', error);
+  } finally {
+    batch.forEach(item => {
+      geometryPendingIds.delete(item.id);
+      geometryReadyIds.add(item.id);
+    });
+    updateRiverOverviewStats();
+    updateWaterfallOverviewStats();
+    updateLakeOverviewStats();
+    updateReservoirOverviewStats();
+    // Re-read the current controls: a user may have changed them while loading.
+    applyFilters();
+  }
+}
+
+
 function renderMarkers(data) {
 
   clearMarkers();
 
   const mapped =
     data.filter(item => {
+      // Never render temporary point fallbacks while a map line is loading.
+      if (needsAtlasGeometry(item) &&
+          (!geometryReadyIds.has(item.id) || geometryLoadFailures.has(item.id))) {
+        return false;
+      }
+
       // Keep all canal records in the database and list, but show only
       // mapped canal lines. Point-only records never create map symbols.
       if (item.type === 'canal') {
@@ -1782,7 +1842,7 @@ function renderList(data) {
       </span>
 
       <span class="object-meta">
-        ${objectTypeLabel(item)}${hasAtlasMapLocation(item) ? '' : ' · Քարտեզային նշում չկա'}
+        ${objectTypeLabel(item)}${needsAtlasGeometry(item) && !geometryReadyIds.has(item.id) ? ' · Քարտեզը բեռնվում է' : hasAtlasMapLocation(item) ? '' : ' · Քարտեզային նշում չկա'}
       </span>
     `;
 
@@ -2023,7 +2083,8 @@ async function openObjectDetails(
   }
 
 
-  if (!hasAtlasMapLocation(item)) {
+  if (!hasAtlasMapLocation(item) &&
+      (!needsAtlasGeometry(item) || geometryReadyIds.has(item.id))) {
     addDetailField(dataContainer, 'Քարտեզային նշում',
       'Կոորդինատները դեռ ճշտված չեն։ Օբյեկտը հասանելի է ցանկում և որոնմամբ։');
   }
@@ -3032,6 +3093,8 @@ function applyFilters() {
     mapObjects
   );
 
+  queueAtlasGeometry(mapObjects);
+
 
   if (
     search &&
@@ -3085,6 +3148,12 @@ function applyFilters() {
     status.textContent =
       `${regionLabel} · ${layerLabel}${pinnedLabel}։ Շտեմարանում՝ ${mapObjects.length} օբյեկտ։`;
   }
+  const pendingMapCount = mapObjects.filter(item =>
+    needsAtlasGeometry(item) && !geometryReadyIds.has(item.id)).length;
+  if (pendingMapCount) {
+    status.textContent += ` Քարտեզային տվյալները բեռնվում են՝ ${pendingMapCount} օբյեկտ։`;
+  }
+
 }
 
 /* =========================================
@@ -3169,6 +3238,7 @@ function updateRiverOverviewStats() {
   const element = document.getElementById('river-overview-count');
   if (!element) return;
   const rivers = allObjects.filter(item => item.type === 'river');
+  if (rivers.some(item => needsAtlasGeometry(item) && !geometryReadyIds.has(item.id))) return;
   // Keep the dated, verified snapshot if any river geometry could not be read.
   if (rivers.some(item => geometryLoadFailures.has(item.id))) return;
   const outlined = rivers.filter(item => hasRiverOutline(item.geometry)).length;
@@ -3179,6 +3249,7 @@ function updateWaterfallOverviewStats() {
   const element = document.getElementById('waterfall-overview-count');
   if (!element) return;
   const waterfalls = allObjects.filter(item => item.type === 'waterfall');
+  if (waterfalls.some(item => needsAtlasGeometry(item) && !geometryReadyIds.has(item.id))) return;
   const hasPoint = item => Number.isFinite(item.latitude) &&
     Number.isFinite(item.longitude) && Math.abs(item.latitude) <= 90 &&
     Math.abs(item.longitude) <= 180;
@@ -3194,6 +3265,7 @@ function updateLakeOverviewStats() {
   const element = document.getElementById('lake-overview-count');
   if (!element) return;
   const lakes = allObjects.filter(item => item.type === 'lake');
+  if (lakes.some(item => needsAtlasGeometry(item) && !geometryReadyIds.has(item.id))) return;
   const hasPoint = item => Number.isFinite(item.latitude) &&
     Number.isFinite(item.longitude) && Math.abs(item.latitude) <= 90 &&
     Math.abs(item.longitude) <= 180;
@@ -3217,6 +3289,7 @@ function updateReservoirOverviewStats() {
   const element = document.getElementById('reservoir-overview-count');
   if (!element) return;
   const reservoirs = allObjects.filter(item => item.type === 'reservoir' && !isTailingsPond(item));
+  if (reservoirs.some(item => needsAtlasGeometry(item) && !geometryReadyIds.has(item.id))) return;
   const hasPoint = item => Number.isFinite(item.latitude) &&
     Number.isFinite(item.longitude) && Math.abs(item.latitude) <= 90 &&
     Math.abs(item.longitude) <= 180;
@@ -3291,33 +3364,8 @@ async function loadObjects() {
     const loadedObjects = await response.json();
 
 
-    const geometryObjects =
-      loadedObjects.filter(item =>
-        item.type === 'river' ||
-        item.type === 'canal' ||
-        item.type === 'waterfall' ||
-        (
-          item.type === 'lake' &&
-          (item.name_hy === 'Սևանա լիճ' || isOutlinedLake(item))
-        ) ||
-        isOutlinedReservoir(item)
-      );
-
-
-    await Promise.all(
-      geometryObjects.map(
-        async item => {
-
-          item.geometry =
-            await loadObjectGeometry(
-              item.id
-            );
-        }
-      )
-    );
-
-
-    // Publish the list only after its map geometries have finished loading.
+    // Metadata and point symbols are immediately usable; selected map
+    // geometries are fetched separately in batches.
     allObjects = loadedObjects;
     objectsLoading = false;
 
@@ -3867,12 +3915,5 @@ renderList([]);
 renderMarkers([]);
 document.getElementById('status').textContent = 'Տվյալները բեռնվում են…';
 loadObjects();
-
-
-
-
-
-
-
 
 
