@@ -109,6 +109,7 @@ L.tileLayer(
 
 
 let allObjects = [];
+let objectsLoading = true;
 const geometryLoadFailures = new Set();
 let markers = [];
 
@@ -1731,6 +1732,29 @@ map.on(
    OBJECT LIST
    ========================================= */
 
+function normalizeAtlasSearch(value) {
+  return String(value || '').normalize('NFKC').toLowerCase()
+    .replace(/և/g, 'եվ').replace(/եւ/g, 'եվ')
+    .replace(/[«»"'(),՝։:;–—-]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function matchesAtlasSearch(item, query) {
+  const words = normalizeAtlasSearch(query).split(' ').filter(Boolean);
+  if (!words.length) return true;
+  const text = normalizeAtlasSearch([
+    item.name_hy, item.name_en, item.name_ru, objectTypeLabel(item)
+  ].filter(Boolean).join(' '));
+  return words.every(word => text.includes(word));
+}
+
+function hasAtlasMapLocation(item) {
+  return Boolean(item.geometry) || (
+    Number.isFinite(item.latitude) && Number.isFinite(item.longitude) &&
+    Math.abs(item.latitude) <= 90 && Math.abs(item.longitude) <= 180
+  );
+}
+
+
 function renderList(data) {
 
   const list =
@@ -1758,7 +1782,7 @@ function renderList(data) {
       </span>
 
       <span class="object-meta">
-        ${objectTypeLabel(item)}
+        ${objectTypeLabel(item)}${hasAtlasMapLocation(item) ? '' : ' · Քարտեզային նշում չկա'}
       </span>
     `;
 
@@ -1998,6 +2022,11 @@ async function openObjectDetails(
     });
   }
 
+
+  if (!hasAtlasMapLocation(item)) {
+    addDetailField(dataContainer, 'Քարտեզային նշում',
+      'Կոորդինատները դեռ ճշտված չեն։ Օբյեկտը հասանելի է ցանկում և որոնմամբ։');
+  }
 
   const description =
     document.getElementById(
@@ -2916,6 +2945,14 @@ function hideSearchEmptyMessage() {
 
 function applyFilters() {
 
+  // Preserve controls during loading, but do not render incomplete geometries.
+  if (objectsLoading) {
+    document.getElementById('status').textContent =
+      'Տվյալները բեռնվում են… Ձեր ընտրությունը կկիրառվի բեռնման ավարտին։';
+    return;
+  }
+
+
   const searchInput =
     document.getElementById(
       'search'
@@ -2943,32 +2980,13 @@ function applyFilters() {
     );
 
 
-  // The region selector is a hard geographic scope. Thematic layers and
-  // search both operate only inside that scope. When no type is checked but
-  // the user types a search term, search runs across every object type in
-  // the selected territory.
-  const activeLayerObjects =
-    (
-      search &&
-      selectedTypes.length === 0
-    )
-      ? regionObjects
-      : regionObjects.filter(
-          item =>
-            selectedTypes.includes(
-              item.type
-            )
-        );
+  // Search covers all object types in the selected territory, including
+  // records without coordinates. Layer checkboxes apply when not searching.
+  const activeLayerObjects = search
+    ? regionObjects
+    : regionObjects.filter(item => selectedTypes.includes(item.type));
 
-
-  const layerObjects =
-    activeLayerObjects.filter(
-      item =>
-        !search ||
-        (item.name_hy || '')
-          .toLowerCase()
-          .includes(search)
-    );
+  const layerObjects = activeLayerObjects.filter(item => matchesAtlasSearch(item, search));
 
 
   // Explicitly opened objects remain pinned only while they belong to the
@@ -3000,10 +3018,7 @@ function applyFilters() {
           selectedRegion
         ) &&
         (
-          !search ||
-          (item.name_hy || '')
-            .toLowerCase()
-            .includes(search)
+          matchesAtlasSearch(item, search)
         )
     );
 
@@ -3048,10 +3063,7 @@ function applyFilters() {
     status.textContent =
       `${regionLabel} · Ընտրեք մեկ կամ մի քանի շերտ, բացեք որևէ օբյեկտ կամ սկսեք որոնել։`;
 
-  } else if (
-    search &&
-    selectedTypes.length === 0
-  ) {
+  } else if (search) {
 
     status.textContent =
       `${regionLabel} · Որոնում բոլոր օբյեկտներում։ Գտնվել է՝ ${layerObjects.length}։`;
@@ -3276,12 +3288,11 @@ async function loadObjects() {
     }
 
 
-    allObjects =
-      await response.json();
+    const loadedObjects = await response.json();
 
 
     const geometryObjects =
-      allObjects.filter(item =>
+      loadedObjects.filter(item =>
         item.type === 'river' ||
         item.type === 'canal' ||
         item.type === 'waterfall' ||
@@ -3306,6 +3317,10 @@ async function loadObjects() {
     );
 
 
+    // Publish the list only after its map geometries have finished loading.
+    allObjects = loadedObjects;
+    objectsLoading = false;
+
     updateRiverOverviewStats();
     updateWaterfallOverviewStats();
     updateLakeOverviewStats();
@@ -3313,37 +3328,8 @@ async function loadObjects() {
     updateSpringOverviewStats();
     updateWetlandOverviewStats();
 
-    // Start with a clean map. Objects appear only after the user
-    // selects one or more object types from the menu.
-    document
-      .querySelectorAll(
-        '.type-filter'
-      )
-      .forEach(input => {
-        input.checked = false;
-      });
-
-
-    renderList(
-      []
-    );
-
-
-    renderMarkers(
-      []
-    );
-
-
-    showArmeniaOverview();
-
-
-    document
-      .getElementById(
-        'status'
-      )
-      .textContent =
-        'Հայաստան · Ընտրեք մեկ կամ մի քանի շերտ, կամ բացեք որևէ օբյեկտ։';
-
+    // Apply the latest controls without clearing choices made during loading.
+    applyFilters();
 
     const initialId =
       getObjectIdFromUrl();
@@ -3392,6 +3378,8 @@ async function loadObjects() {
 
 
   } catch (error) {
+
+    objectsLoading = false;
 
     document
       .getElementById(
@@ -3870,7 +3858,16 @@ window.addEventListener(
    START
    ========================================= */
 
+// Initialize the clean default state synchronously, before the first fetch.
+// Resetting controls after an await would erase the user's first selection.
+document.querySelectorAll('.type-filter').forEach(input => {
+  input.checked = false;
+});
+renderList([]);
+renderMarkers([]);
+document.getElementById('status').textContent = 'Տվյալները բեռնվում են…';
 loadObjects();
+
 
 
 
