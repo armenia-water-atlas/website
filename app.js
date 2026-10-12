@@ -572,15 +572,30 @@ function buildSharedAtlasUrl() {
   url.hash = params.toString();
   return url.toString();
 }
+let shareMapNoticeTimer = null;
+function clearShareMapNotice() {
+  if (shareMapNoticeTimer !== null) clearTimeout(shareMapNoticeTimer);
+  shareMapNoticeTimer = null;
+  const message = document.getElementById('share-map-status');
+  const fallback = document.getElementById('share-map-link');
+  if (message) message.textContent = '';
+  if (fallback) fallback.hidden = true;
+}
+function clearShareNoticeOnAction(event) {
+  if (event.target.closest && event.target.closest('#share-map, #share-map-link, #share-map-status')) return;
+  clearShareMapNotice();
+}
 async function copyAtlasView() {
   const button = document.getElementById('share-map');
   const message = document.getElementById('share-map-status');
   const fallback = document.getElementById('share-map-link');
+  clearShareMapNotice();
   button.disabled = true;fallback.hidden = true;message.textContent = '';
   const url = buildSharedAtlasUrl();
   try {
     await navigator.clipboard.writeText(url);
     message.textContent = 'Հղումը պատճենված է։ Կարող եք ուղարկել։';
+    shareMapNoticeTimer = setTimeout(clearShareMapNotice, 4000);
   } catch {
     fallback.hidden = false;fallback.value = url;fallback.focus();fallback.select();
     message.textContent = 'Պատճենեք ընտրված հղումը՝ Ctrl+C կամ երկար սեղմումով։';
@@ -3938,6 +3953,10 @@ if (sharedAtlasView) {
   document.getElementById('search').value = sharedAtlasView.query;
 }
 document.getElementById('share-map').addEventListener('click', copyAtlasView);
+map.on('movestart', clearShareMapNotice);
+for (const eventName of ['click', 'input', 'change']) {
+  document.addEventListener(eventName, clearShareNoticeOnAction, true);
+}
 renderList([]);
 renderMarkers([]);
 document.getElementById('status').textContent = 'Տվյալները բեռնվում են…';
