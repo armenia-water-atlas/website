@@ -301,9 +301,10 @@ header p {
 /* Override Leaflet's default nowrap so long object details stay inside. */
 .leaflet-tooltip.object-hover-tooltip {
   box-sizing: border-box;
-  max-width: min(320px, calc(100vw - 32px));
+  width: 320px;
+  max-width: calc(100vw - 32px);
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
 
   padding: 12px 14px;
