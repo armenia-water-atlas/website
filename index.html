@@ -317,6 +317,11 @@
 
       </div>
 
+      <div style="padding: 6px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+        <button id="share-map" type="button" style="padding: 7px 12px; border: 1px solid #247c72; border-radius: 8px; background: white; color: #19685f; cursor: pointer; font: inherit;">Պատճենել քարտեզի հղումը</button>
+        <span id="share-map-status" role="status" aria-live="polite" style="font-size: 13px;"></span>
+        <input id="share-map-link" type="text" readonly hidden aria-label="Քարտեզի հղումը՝ պատճենելու համար" style="width: 100%; min-width: 0; padding: 8px;">
+      </div>
       <div id="map"></div>
 
             <!-- OBJECT DETAILS -->
@@ -521,7 +526,7 @@
 
 <!-- Atlas application -->
 
-<script src="app.js?v=20261011-map-navigation"></script>
+<script src="app.js?v=20261012-map-share"></script>
 
 </body>
 
