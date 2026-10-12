@@ -90,7 +90,11 @@ function showArmeniaOverview() {
   });
 }
 
-showArmeniaOverview();
+const sharedAtlasView = parseSharedAtlasView(window.location.hash);
+if (sharedAtlasView) {
+  sizeAtlasMap();
+  map.setView([sharedAtlasView.lat, sharedAtlasView.lng], sharedAtlasView.zoom, {animate: false});
+} else showArmeniaOverview();
 window.addEventListener('resize', () => {
   const wasOverview = map.getBounds().contains(ARMENIA_BOUNDS);
   sizeAtlasMap();
@@ -545,6 +549,43 @@ function addDetailField(
 /* =========================================
    URL / HISTORY
    ========================================= */
+
+// Shared links contain map position and the visible filter choices.
+function parseSharedAtlasView(hash) {
+  const params = new URLSearchParams(hash.replace(/^#/, ''));
+  const parts = (params.get('map') || '').split('/');
+  if (parts.length !== 3 || parts.some(value => !value.trim())) return null;
+  const [zoom, lat, lng] = parts.map(Number);
+  if (![zoom, lat, lng].every(Number.isFinite) || zoom < 0 || zoom > 19 || Math.abs(lat) > 85.05112878 || Math.abs(lng) > 180) return null;
+  return {zoom, lat, lng, types: (params.get('types') || '').split(',').filter(Boolean), region: params.get('region') || 'Հայաստան', query: (params.get('q') || '').slice(0, 200)};
+}
+function buildSharedAtlasUrl() {
+  const center = map.getCenter();
+  const url = new URL(window.location.href);
+  const lng = ((center.lng + 180) % 360 + 360) % 360 - 180;
+  const params = new URLSearchParams();
+  params.set('map', [map.getZoom().toFixed(1), center.lat.toFixed(6), lng.toFixed(6)].join('/'));
+  params.set('types', getSelectedTypes().join(','));
+  params.set('region', getSelectedRegion());
+  const query = document.getElementById('search').value.trim();
+  if (query) params.set('q', query);
+  url.hash = params.toString();
+  return url.toString();
+}
+async function copyAtlasView() {
+  const button = document.getElementById('share-map');
+  const message = document.getElementById('share-map-status');
+  const fallback = document.getElementById('share-map-link');
+  button.disabled = true;fallback.hidden = true;message.textContent = '';
+  const url = buildSharedAtlasUrl();
+  try {
+    await navigator.clipboard.writeText(url);
+    message.textContent = 'Հղումը պատճենված է։ Կարող եք ուղարկել։';
+  } catch {
+    fallback.hidden = false;fallback.value = url;fallback.focus();fallback.select();
+    message.textContent = 'Պատճենեք ընտրված հղումը՝ Ctrl+C կամ երկար սեղմումով։';
+  } finally {button.disabled = false;}
+}
 
 function getObjectIdFromUrl() {
 
@@ -3394,10 +3435,7 @@ async function loadObjects() {
         applyFilters();
 
 
-        focusObjectOnMap(
-          item,
-          13
-        );
+        if (!sharedAtlasView) focusObjectOnMap(item, 13);
 
 
         await openObjectDetails(
@@ -3892,8 +3930,14 @@ window.addEventListener(
 // Initialize the clean default state synchronously, before the first fetch.
 // Resetting controls after an await would erase the user's first selection.
 document.querySelectorAll('.type-filter').forEach(input => {
-  input.checked = false;
+  input.checked = !!sharedAtlasView && sharedAtlasView.types.includes(input.value);
 });
+if (sharedAtlasView) {
+  const region = document.getElementById('region-filter');
+  if (region && Array.from(region.options).some(option => option.value === sharedAtlasView.region)) region.value = sharedAtlasView.region;
+  document.getElementById('search').value = sharedAtlasView.query;
+}
+document.getElementById('share-map').addEventListener('click', copyAtlasView);
 renderList([]);
 renderMarkers([]);
 document.getElementById('status').textContent = 'Տվյալները բեռնվում են…';
