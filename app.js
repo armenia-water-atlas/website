@@ -557,7 +557,7 @@ function parseSharedAtlasView(hash) {
   if (parts.length !== 3 || parts.some(value => !value.trim())) return null;
   const [zoom, lat, lng] = parts.map(Number);
   if (![zoom, lat, lng].every(Number.isFinite) || zoom < 0 || zoom > 19 || Math.abs(lat) > 85.05112878 || Math.abs(lng) > 180) return null;
-  return {zoom, lat, lng, types: (params.get('types') || '').split(',').filter(Boolean), region: params.get('region') || 'Հայաստան', query: (params.get('q') || '').slice(0, 200)};
+  return {zoom, lat, lng, types: (params.get('types') || '').split(',').filter(Boolean), region: params.get('region') || 'Հայաստան', query: (params.get('q') || '').slice(0, 200), riverMin: [0,10,25,50,100].includes(Number(params.get('riverMin'))) ? Number(params.get('riverMin')) : 0, riverUnknown: params.get('riverUnknown') !== '0'};
 }
 function buildSharedAtlasUrl() {
   const center = map.getCenter();
@@ -567,6 +567,8 @@ function buildSharedAtlasUrl() {
   params.set('map', [map.getZoom().toFixed(1), center.lat.toFixed(6), lng.toFixed(6)].join('/'));
   params.set('types', getSelectedTypes().join(','));
   params.set('region', getSelectedRegion());
+  params.set('riverMin', String(getRiverMinimumLength()));
+  params.set('riverUnknown', document.getElementById('river-include-unknown').checked ? '1' : '0');
   const query = document.getElementById('search').value.trim();
   if (query) params.set('q', query);
   url.hash = params.toString();
@@ -2850,6 +2852,20 @@ async function loadObjectSources(
    FILTERS
    ========================================= */
 
+function getRiverMinimumLength() {
+  const value = Number(document.getElementById('river-min-length')?.value || 0);
+  return [0, 10, 25, 50, 100].includes(value) ? value : 0;
+}
+function matchesRiverLength(item, minimum, includeUnknown) {
+  if (item.type !== 'river' || minimum === 0) return true;
+  const length = item.length_km;
+  if (length === null || length === undefined || length === '' || !Number.isFinite(Number(length)) || Number(length) <= 0) return includeUnknown;
+  return Number(length) >= minimum;
+}
+function syncRiverFilterVisibility() {
+  document.getElementById('river-length-controls').hidden = !getSelectedTypes().includes('river');
+}
+
 function getSelectedTypes() {
 
   return Array.from(
@@ -3054,6 +3070,7 @@ function hideSearchEmptyMessage() {
 
 
 function applyFilters() {
+  syncRiverFilterVisibility();
 
   // Preserve controls during loading, but do not render incomplete geometries.
   if (objectsLoading) {
@@ -3095,7 +3112,9 @@ function applyFilters() {
   const searchObjects = search
     ? regionObjects.filter(item => matchesAtlasSearch(item, search))
     : [];
-  const enabledLayerObjects = regionObjects.filter(item => selectedTypes.includes(item.type));
+  const minimumRiverLength = getRiverMinimumLength();
+  const includeUnknownRivers = document.getElementById('river-include-unknown').checked;
+  const enabledLayerObjects = regionObjects.filter(item => selectedTypes.includes(item.type) && matchesRiverLength(item, minimumRiverLength, includeUnknownRivers));
   const layerObjects = mergeObjectsById(searchObjects, enabledLayerObjects);
 
 
@@ -3741,6 +3760,8 @@ function ensureLayerControls() {
         });
 
 
+      document.getElementById('river-min-length').value = '0';
+      document.getElementById('river-include-unknown').checked = true;
       pinnedObjectIds.clear();
 
 
@@ -3951,7 +3972,11 @@ if (sharedAtlasView) {
   const region = document.getElementById('region-filter');
   if (region && Array.from(region.options).some(option => option.value === sharedAtlasView.region)) region.value = sharedAtlasView.region;
   document.getElementById('search').value = sharedAtlasView.query;
+  document.getElementById('river-min-length').value = String(sharedAtlasView.riverMin);
+  document.getElementById('river-include-unknown').checked = sharedAtlasView.riverUnknown;
 }
+for (const id of ['river-min-length', 'river-include-unknown']) document.getElementById(id).addEventListener('change', applyFilters);
+syncRiverFilterVisibility();
 document.getElementById('share-map').addEventListener('click', copyAtlasView);
 map.on('movestart', clearShareMapNotice);
 for (const eventName of ['click', 'input', 'change']) {
@@ -3961,6 +3986,3 @@ renderList([]);
 renderMarkers([]);
 document.getElementById('status').textContent = 'Տվյալները բեռնվում են…';
 loadObjects();
-
-
-
