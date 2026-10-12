@@ -302,25 +302,11 @@
 
     <div class="map-card">
 
-      <div class="map-toolbar">
-
-        <h2>
-          Քարտեզ
-        </h2>
-
-        <span
-          id="map-count"
-          class="map-count"
-        >
-          Քարտեզագրված՝ 0
-        </span>
-
-      </div>
-
-      <div style="padding: 6px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
-        <button id="share-map" type="button" style="padding: 7px 12px; border: 1px solid #247c72; border-radius: 8px; background: white; color: #19685f; cursor: pointer; font: inherit;">Պատճենել քարտեզի հղումը</button>
+      <div class="map-toolbar" style="flex-wrap: wrap; gap: 8px;">
+        <button id="share-map" type="button" title="Պատճենել հղումը՝ Ատլասը այս քարտեզային տեսքով ուղարկելու համար" aria-label="Ստանալ հղում՝ Ատլասը այս քարտեզային տեսքով ուղարկելու համար" style="padding: 7px 12px; border: 1px solid #247c72; border-radius: 8px; background: white; color: #19685f; cursor: pointer; font: inherit;">Ստանալ այս տեսքի հղումը</button>
+        <span id="map-count" class="map-count">Քարտեզագրված՝ 0</span>
         <span id="share-map-status" role="status" aria-live="polite" style="font-size: 13px;"></span>
-        <input id="share-map-link" type="text" readonly hidden aria-label="Քարտեզի հղումը՝ պատճենելու համար" style="width: 100%; min-width: 0; padding: 8px;">
+        <input id="share-map-link" type="text" readonly hidden aria-label="Ատլասի այս տեսքի հղումը՝ պատճենելու համար" style="width: 100%; min-width: 0; padding: 8px;">
       </div>
       <div id="map"></div>
 
