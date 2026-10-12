@@ -268,6 +268,19 @@
     </div>
 
 
+    <div id="river-length-controls" hidden style="margin: 10px 0;">
+      <label for="river-min-length">Գետերի երկարությունը</label>
+      <select id="river-min-length" style="width: 100%; padding: 7px; margin-top: 5px; border: 1px solid #d8e1e5; border-radius: 8px; font: inherit;">
+        <option value="0">Բոլոր գետերը</option>
+        <option value="10">Առնվազն 10 կմ</option>
+        <option value="25">Առնվազն 25 կմ</option>
+        <option value="50">Առնվազն 50 կմ</option>
+        <option value="100">Առնվազն 100 կմ</option>
+      </select>
+      <label style="display: block; margin-top: 6px;"><input id="river-include-unknown" type="checkbox" checked> Ներառել անհայտ երկարությամբ գետերը</label>
+      <p style="font-size: 12px; line-height: 1.4; color: #647780; margin: 6px 0;">Ըստ շտեմարանում նշված երկարության։ Անունով որոնված կամ առանձին բացված գետը երևում է նաև զտիչից անկախ։</p>
+    </div>
+
     <!-- STATUS -->
 
     <div
@@ -512,7 +525,7 @@
 
 <!-- Atlas application -->
 
-<script src="app.js?v=20261012-map-share"></script>
+<script src="app.js?v=20261012-river-length"></script>
 
 </body>
 
