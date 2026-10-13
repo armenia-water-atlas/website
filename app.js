@@ -2009,8 +2009,13 @@ function renderList(data) {
 
 
   list.innerHTML = '';
-  const emptyMessage = document.getElementById('header-object-list-empty');
-  if (emptyMessage) emptyMessage.hidden = data.length > 0;
+  const listPanel = document.getElementById('header-object-list');
+  if (listPanel) {
+    const hide = getSelectedTypes().length === 0 || data.length === 0;
+    const changed = listPanel.hidden !== hide;
+    listPanel.hidden = hide;
+    if (changed) requestAnimationFrame(sizeAtlasMap);
+  }
   const listCount = document.getElementById('header-object-list-count');
   if (listCount) listCount.textContent = String(data.length);
 
@@ -2023,18 +2028,13 @@ function renderList(data) {
 
     li.className =
       'object-item';
-    li.title = `${item.name_hy || 'Անանուն օբյեկտ'} — ${objectTypeLabel(item)}`;
+    li.title = item.name_hy || 'Անանուն օբյեկտ';
 
 
-    li.innerHTML = `
-      <span class="object-name">
-        ${item.name_hy || 'Անանուն օբյեկտ'}
-      </span>
-
-      <span class="object-meta">
-        ${objectTypeLabel(item)}${needsAtlasGeometry(item) && !geometryReadyIds.has(item.id) ? ' · Քարտեզը բեռնվում է' : hasAtlasMapLocation(item) ? '' : ' · Քարտեզային նշում չկա'}
-      </span>
-    `;
+    const name = document.createElement('span');
+    name.className = 'object-name';
+    name.textContent = item.name_hy || 'Անանուն օբյեկտ';
+    li.appendChild(name);
 
 
     li.addEventListener(
