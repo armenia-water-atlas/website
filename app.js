@@ -184,8 +184,8 @@ function syncRiverSystemLegend() {
   legend.hidden = activeRiverSystemRoot === null || !riverById.has(Number(activeRiverSystemRoot));
   if (!legend.hidden) {
     const root = riverById.get(Number(activeRiverSystemRoot));
-    document.getElementById('river-system-name').textContent = `${root.name_hy || 'Ընտրված գետ'}․ գետային համակարգ`;
-    document.getElementById('river-system-main-name').textContent = root.name_hy || 'Հիմնական գետ';
+    document.getElementById('river-system-name').textContent = `${objectDisplayName(root)}․ գետային համակարգ`;
+    document.getElementById('river-system-main-name').textContent = objectDisplayName(root);
     const items = getActiveRiverSystemObjects();
     const ready = items.filter(item => geometryReadyIds.has(item.id) && item.geometry && !geometryLoadFailures.has(item.id)).length;
     document.getElementById('river-system-count').textContent = `Ատլասում առկա ${items.length} գետից քարտեզագրված է ${ready}-ը։`;
@@ -281,7 +281,7 @@ function highlightSelectedRiver() {
   const position = selectedRiverLabelPosition(item.geometry);
   if (position) {
     const name = document.createElement('span');
-    name.textContent = item.name_hy || 'Անանուն գետ';
+    name.textContent = objectDisplayName(item);
     name.style.color = riverSystemStyle(item)?.color || '#9a4100';
     name.style.fontWeight = '700';
     selectedRiverLabel = L.tooltip({
@@ -935,7 +935,7 @@ function hydropowerDisplayFields(item) {
       fields.push(['Առաքման ժամանակահատված', `${start}–${end} թթ.`]);
     }
     if (group) {
-      const names = members.map(object => object.name_hy).filter(Boolean);
+      const names = members.map(objectDisplayName).filter(Boolean);
       fields.push([
         'Խմբային ցուցանիշի պարզաբանում',
         names.length
@@ -1002,7 +1002,7 @@ function buildHoverInfo(item) {
 
   let html =
     `<div class="popup-title">` +
-    `${item.name_hy || 'Անանուն օբյեկտ'}` +
+    `${objectDisplayName(item)}` +
     `</div>`;
 
 
@@ -1444,7 +1444,31 @@ function isTailingsPond(item) {
     item.name_hy === 'Թեղուտի պոչամբար';
 }
 
+// Consistent display names; stored identities and names remain unchanged.
+function isSmallHydropower(item) {
+  if (item.type !== 'hydropower') return false;
+  const kind = String(item.hydropower_kind || '').normalize('NFKC').trim();
+  if (kind) return /փհէկ|փոքր\s*հէկ|small[ _-]*hpp/iu.test(kind);
+  return /փհէկ/iu.test(String(item.name_hy || ''));
+}
+function objectDisplayName(item) {
+  let name = String(item.name_hy || '').trim();
+  if (item.type === 'river') {
+    if (!name) return 'Անանուն գետ';
+    return /(?:^|[^\p{L}])գետ(?:$|[^\p{L}])/iu.test(name) ? name : `${name} գետ`;
+  }
+  if (item.type === 'hydropower') {
+    const label = isSmallHydropower(item) ? 'ՓՀԷԿ' : 'ՀԷԿ';
+    if (!name) return `Անանուն ${label}`;
+    const token = /(?<![\p{L}\p{N}])(?:փոքր\s*հէկ|փհէկ|հէկ)(?!\p{L})/giu;
+    if (token.test(name)) return name.replace(token, label);
+    return `${name} ${label}`;
+  }
+  return name || 'Անանուն օբյեկտ';
+}
+
 function objectTypeLabel(item) {
+  if (isSmallHydropower(item)) return 'ՓՀԷԿ';
   return isTailingsPond(item) ? 'Պոչամբար' : typeLabel(item.type);
 }
 
@@ -1987,7 +2011,7 @@ function matchesAtlasSearch(item, query) {
   const words = normalizeAtlasSearch(query).split(' ').filter(Boolean);
   if (!words.length) return true;
   const text = normalizeAtlasSearch([
-    item.name_hy, item.name_en, item.name_ru, objectTypeLabel(item)
+    item.name_hy, item.name_en, item.name_ru, objectDisplayName(item), objectTypeLabel(item)
   ].filter(Boolean).join(' '));
   return words.every(word => text.includes(word));
 }
@@ -2028,12 +2052,12 @@ function renderList(data) {
 
     li.className =
       'object-item';
-    li.title = item.name_hy || 'Անանուն օբյեկտ';
+    li.title = objectDisplayName(item);
 
 
     const name = document.createElement('span');
     name.className = 'object-name';
-    name.textContent = item.name_hy || 'Անանուն օբյեկտ';
+    name.textContent = objectDisplayName(item);
     li.appendChild(name);
 
 
@@ -2140,8 +2164,7 @@ async function openObjectDetails(
       'details-name'
     )
     .textContent =
-      item.name_hy ||
-      'Անանուն օբյեկտ';
+      objectDisplayName(item);
 
 
   const dataContainer =
@@ -2169,7 +2192,7 @@ async function openObjectDetails(
 
   if (item.type === 'river' && item.parent_river_id != null) {
     const receiver = riverById.get(Number(item.parent_river_id));
-    addDetailField(dataContainer, 'Թափվում է', receiver?.name_hy || null);
+    addDetailField(dataContainer, 'Թափվում է', receiver ? objectDisplayName(receiver) : null);
   }
 
 
