@@ -93,6 +93,58 @@
   .site-footer .feedback-help {font-size:12px;color:#526875;}
 </style>
 <style>html, body, .object-list, #object-details { overflow-anchor: none; }</style>
+<style>
+/* Compact object list in the free right-hand part of the atlas header. */
+header.site-header .site-header-inner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(270px, 360px);
+  align-items: center;
+}
+header.site-header .header-object-list {
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid #d8e1e5;
+  border-radius: 10px;
+  background: #fff;
+}
+header.site-header .header-object-list h3 {
+  display: flex; justify-content: space-between; gap: 8px;
+  margin: 0 0 4px; font-size: 13px; line-height: 18px;
+}
+#header-object-list-count { color: #647780; font-weight: 400; }
+.header-object-list-window { position: relative; height: 100px; }
+header.site-header #object-items {
+  height: 100px; max-height: 100px;
+  margin: 0; padding: 0; overflow-y: auto; overflow-x: hidden;
+  scrollbar-gutter: stable; overscroll-behavior: contain;
+}
+header.site-header .object-item {
+  box-sizing: border-box;
+  display: flex; flex-direction: row; align-items: center; gap: 7px;
+  height: 20px; padding: 0 2px; font-size: 12px; line-height: 19px;
+  white-space: nowrap;
+}
+header.site-header .object-name {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+header.site-header .object-meta {
+  flex: 0 1 auto; min-width: 0; max-width: 45%;
+  overflow: hidden; text-overflow: ellipsis; font-size: 11px;
+}
+.header-object-list-empty:not([hidden]) {
+  position: absolute; inset: 0; display: flex; align-items: center;
+  justify-content: center; margin: 0; padding: 8px;
+  color: #647780; font-size: 12px; text-align: center; pointer-events: none;
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  header.site-header .site-header-inner { gap: 12px; grid-template-columns: auto minmax(0, 1fr) minmax(230px, 290px); }
+  header.site-header .site-title { font-size: 21px; }
+}
+@media (max-width: 760px) {
+  header.site-header .site-header-inner { grid-template-columns: auto minmax(0, 1fr); }
+  header.site-header .header-object-list { grid-column: 1 / -1; }
+}
+</style>
 </head>
 
 
@@ -118,6 +170,13 @@
 
     <nav class="atlas-navigation" aria-label="Կայքի էջեր"><a href="contact.html">Հետադարձ կապ</a></nav>
     </div>
+    <section class="object-list header-object-list" aria-labelledby="header-object-list-title">
+      <h3 id="header-object-list-title">Օբյեկտների ցանկ <span id="header-object-list-count">0</span></h3>
+      <div class="header-object-list-window">
+        <ul id="object-items" class="object-items" tabindex="0" aria-label="Ընտրված շերտերի և որոնման օբյեկտները"></ul>
+        <p id="header-object-list-empty" class="header-object-list-empty">Ընտրիր շերտ կամ որոնիր օբյեկտը։</p>
+      </div>
+    </section>
   </div>
 
 </header>
@@ -303,20 +362,6 @@
     </div>
 
 
-    <!-- OBJECT LIST -->
-
-    <div class="object-list">
-
-      <h3>
-        Օբյեկտների ցանկ
-      </h3>
-
-      <ul
-        id="object-items"
-        class="object-items"
-      ></ul>
-
-    </div>
 
   </aside>
 
@@ -537,7 +582,7 @@
 
 <!-- Atlas application -->
 
-<script src="app.js?v=20261013-tooltip-visible"></script>
+<script src="app.js?v=20261013-header-object-list"></script>
 
 </body>
 
