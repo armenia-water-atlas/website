@@ -2053,12 +2053,14 @@ async function openObjectDetails(
 ) {
 
   selectedObjectId = Number(item.id);
-  if (item.type === 'river' && hasRiverSystem(item.id) && !(activeRiverSystemRoot !== null && riverSystemDepth(item.id) !== null)) {
+  // Each selection becomes the root of its own upstream system.
+  // Debed -> Pambak -> a tributary narrows the displayed hierarchy.
+  if (item.type === 'river' && hasRiverSystem(item.id)) {
     activeRiverSystemRoot = initialSharedRiverSystem === 'none' ? null : Number(item.id);
-  } else if (!(activeRiverSystemRoot !== null && item.type === 'river' && riverSystemDepth(item.id) !== null)) {
+  } else {
     activeRiverSystemRoot = null;
-    pendingRiverSystemFit = false;
   }
+  pendingRiverSystemFit = false;
   initialSharedRiverSystem = null;
   rebuildActiveRiverSystem();
   applyFilters();
@@ -3259,15 +3261,19 @@ function applyFilters() {
     );
 
 
-  const mapObjects =
+  const availableObjects =
     mergeObjectsById(
       mergeObjectsById(layerObjects, pinnedObjects),
       getActiveRiverSystemObjects()
     );
 
 
-  // The side list includes search results and every enabled map layer.
-  const listObjects = mapObjects.filter(item => matchesSelectedRegion(item, selectedRegion) || (activeRiverSystemRoot !== null && riverSystemDepth(item.id) !== null));
+  const mapObjects = availableObjects.filter(item => item.type !== 'river' ||
+    activeRiverSystemRoot === null || riverSystemDepth(item.id) !== null);
+
+  // Keep the list available for choosing another system; the map shows
+  // only the selected river and its upstream branches.
+  const listObjects = availableObjects.filter(item => matchesSelectedRegion(item, selectedRegion) || (activeRiverSystemRoot !== null && riverSystemDepth(item.id) !== null));
 
 
   renderList(
