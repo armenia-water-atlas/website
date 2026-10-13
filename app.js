@@ -961,6 +961,43 @@ function escapeHydropowerHtml(value) {
 }
 
 
+// Keep object hover cards within both the map and the visible browser area.
+function constrainAtlasHoverCard(card, viewport, mapRect, currentPosition) {
+  const gap = 8;
+  const left = Math.max(0, mapRect.left) + gap;
+  const top = Math.max(0, mapRect.top) + gap;
+  const right = Math.min(viewport.width, mapRect.right) - gap;
+  const bottom = Math.min(viewport.height, mapRect.bottom) - gap;
+  if (right <= left || bottom <= top) return currentPosition;
+  const dx = card.left < left ? left - card.left : card.right > right ? right - card.right : 0;
+  const dy = card.top < top ? top - card.top : card.bottom > bottom ? bottom - card.bottom : 0;
+  return {x: currentPosition.x + dx, y: currentPosition.y + dy};
+}
+const AtlasHoverTooltip = L.Tooltip.extend({
+  _setPosition: function (pos) {
+    if (!this._map || !this._container) return;
+    const mapRect = this._map.getContainer().getBoundingClientRect();
+    const viewport = {width: window.innerWidth, height: window.innerHeight};
+    const width = Math.min(viewport.width, mapRect.right) - Math.max(0, mapRect.left) - 16;
+    const height = Math.min(viewport.height, mapRect.bottom) - Math.max(0, mapRect.top) - 16;
+    if (width > 0 && height > 0) {
+      Object.assign(this._container.style, {
+        width: Math.min(320, width) + 'px', maxWidth: width + 'px',
+        maxHeight: height + 'px', overflowY: 'auto', boxSizing: 'border-box'
+      });
+    }
+    L.Tooltip.prototype._setPosition.call(this, pos);
+    const position = L.DomUtil.getPosition(this._container);
+    const adjusted = constrainAtlasHoverCard(this._container.getBoundingClientRect(), viewport, mapRect, position);
+    if (adjusted.x !== position.x || adjusted.y !== position.y) {
+      L.DomUtil.setPosition(this._container, L.point(adjusted.x, adjusted.y));
+    }
+  }
+});
+function createAtlasHoverTooltip(content, options) {
+  return new AtlasHoverTooltip(options).setContent(content);
+}
+
 function buildHoverInfo(item) {
 
   let html =
@@ -1595,14 +1632,14 @@ function renderMarkers(data) {
 
         marker.waterObjectId = item.id;
         marker.trueLatLng = point;
-        marker.bindTooltip(buildHoverInfo(item), {
+        marker.bindTooltip(createAtlasHoverTooltip(buildHoverInfo(item), {
           direction: 'auto',
           offset: [0, 0],
           opacity: 1,
           sticky: false,
           interactive: false,
           className: 'object-hover-tooltip'
-        });
+        }));
         smallLakeCollisionMarkers.push({ marker, trueLatLng: point });
         marker.on('click', () => {
           marker.closeTooltip();
@@ -1653,9 +1690,7 @@ function renderMarkers(data) {
           }
         ).addTo(map);
 
-      marker.bindTooltip(
-        buildHoverInfo(item),
-        {
+      marker.bindTooltip(createAtlasHoverTooltip(buildHoverInfo(item), {
           direction: 'auto',
           offset: [0, 0],
           opacity: 1,
@@ -1663,8 +1698,7 @@ function renderMarkers(data) {
           interactive: false,
           className:
             'object-hover-tooltip'
-        }
-      );
+        }));
 
       marker.waterObjectId =
         item.id;
@@ -1738,9 +1772,7 @@ function renderMarkers(data) {
 
       geometryLayer.eachLayer(part => {
 
-        part.bindTooltip(
-          buildHoverInfo(item),
-          {
+        part.bindTooltip(createAtlasHoverTooltip(buildHoverInfo(item), {
             direction: 'auto',
             offset: [0, 0],
             opacity: 1,
@@ -1748,8 +1780,7 @@ function renderMarkers(data) {
             interactive: false,
             className:
               'object-hover-tooltip'
-          }
-        );
+          }));
 
         part.on(
           'mouseover',
@@ -1825,9 +1856,7 @@ function renderMarkers(data) {
             }
           ).addTo(map);
 
-        waterMarker.bindTooltip(
-          buildHoverInfo(item),
-          {
+        waterMarker.bindTooltip(createAtlasHoverTooltip(buildHoverInfo(item), {
             direction: 'auto',
             offset: [0, 0],
             opacity: 1,
@@ -1835,8 +1864,7 @@ function renderMarkers(data) {
             interactive: false,
             className:
               'object-hover-tooltip'
-          }
-        );
+          }));
 
         waterMarker.waterObjectId =
           item.id;
@@ -1882,9 +1910,7 @@ function renderMarkers(data) {
           item.longitude
         ]).addTo(map);
 
-      marker.bindTooltip(
-        buildHoverInfo(item),
-        {
+      marker.bindTooltip(createAtlasHoverTooltip(buildHoverInfo(item), {
           direction: 'auto',
           offset: [0, 0],
           opacity: 1,
@@ -1892,8 +1918,7 @@ function renderMarkers(data) {
           interactive: false,
           className:
             'object-hover-tooltip'
-        }
-      );
+        }));
 
       marker.waterObjectId =
         item.id;
