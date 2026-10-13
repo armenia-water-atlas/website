@@ -282,11 +282,14 @@
     </div>
 
     <div style="margin: 12px 0;">
-      <label><input id="watershed-toggle" type="checkbox" aria-controls="watershed-legend"> Ջրահավաք ավազաններ</label>
-      <div id="watershed-legend" hidden style="font-size: 12px; line-height: 1.5; margin-top: 7px; overflow-wrap: break-word;">
-        <div><span style="color: #2475a8;">●</span> Արաքսի ջրային համակարգ</div>
-        <div><span style="color: #8255a5;">●</span> Կուրի մյուս վտակների ջրային համակարգ</div>
-        <p style="margin: 6px 0; color: #647780;">Ցուցադրված են միայն Հայաստանի ներսում գտնվող հատվածները։ Կուրի երկրորդ գույնը չի ներառում Արաքսը։ Սահմանները մոտավոր են՝ ըստ HydroBASINS տեղագրական մոդելի, ոչ ջրավազանային կառավարման տարածքներ։</p>
+      <label for="river-basin-select">Գետի ջրահավաք ավազանը</label>
+      <select id="river-basin-select" aria-controls="river-basin-note" style="width: 100%; padding: 7px; margin-top: 5px; border: 1px solid #d8e1e5; border-radius: 8px; font: inherit;">
+        <option value="">Չցուցադրել</option>
+        <option value="debed">Դեբեդի ավազանը (փորձնական)</option>
+      </select>
+      <div id="river-basin-note" hidden style="font-size: 12px; line-height: 1.5; margin-top: 7px; overflow-wrap: break-word;">
+        <p style="margin: 6px 0; color: #647780;"><span style="color: #b56816;">●</span> Ոսկեգույն տարածքը Դեբեդի ջրահավաք ավազանն է՝ ներառյալ Փամբակի և Ձորագետի ավազանները։ Ցուցադրվում է ամբողջ ավազանը՝ նաև Հայաստանից դուրս գտնվող մասը։</p>
+        <p style="margin: 6px 0; color: #647780;">Գետերի ցանկը որոշվում է վերևի զտիչներով։ Ավազանի ընտրությունը դրանք չի փոխում։ Սահմանը մոտավոր է՝ ըստ HydroBASINS տեղագրական մոդելի։</p>
         <a href="https://www.hydrosheds.org/products/hydrobasins" target="_blank" rel="noopener">Տվյալների աղբյուրը</a>
       </div>
     </div>
@@ -535,7 +538,7 @@
 
 <!-- Atlas application -->
 
-<script src="app.js?v=20261012-watersheds"></script>
+<script src="app.js?v=20261013-debed-basin"></script>
 
 </body>
 
