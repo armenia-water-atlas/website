@@ -92,6 +92,7 @@
   .site-footer a.feedback-button:hover {filter:brightness(.92);}
   .site-footer .feedback-help {font-size:12px;color:#526875;}
 </style>
+<style>html, body, .object-list, #object-details { overflow-anchor: none; }</style>
 </head>
 
 
@@ -276,9 +277,20 @@
         <option value="25">Առնվազն 25 կմ</option>
         <option value="50">Առնվազն 50 կմ</option>
         <option value="100">Առնվազն 100 կմ</option>
+        <option value="unknown">Երկարությունը չկա</option>
       </select>
-      <label style="display: block; margin-top: 6px;"><input id="river-include-unknown" type="checkbox" checked> Ներառել անհայտ երկարությամբ գետերը</label>
       <p style="font-size: 12px; line-height: 1.4; color: #647780; margin: 6px 0;">Ըստ շտեմարանում նշված երկարության։ Անունով որոնված կամ առանձին բացված գետը երևում է նաև զտիչից անկախ։</p>
+    </div>
+
+    <div id="river-system-legend" hidden style="margin: 10px 0; padding: 10px; border: 1px solid #d8e1e5; border-radius: 8px; font-size: 12px; line-height: 1.5;">
+      <strong>Դեբեդի գետային համակարգը</strong>
+      <div><span style="display:inline-block;width:22px;border-top:7px solid #e76f00;vertical-align:middle;margin-right:5px;"></span> Դեբեդ</div>
+      <div><span style="display:inline-block;width:22px;border-top:5px solid #7b3294;vertical-align:middle;margin-right:5px;"></span> Դեբեդի անմիջական վտակներ</div>
+      <div><span style="display:inline-block;width:22px;border-top:3.5px solid #087f8c;vertical-align:middle;margin-right:5px;"></span> Վտակների վտակներ</div>
+      <div><span style="display:inline-block;width:22px;border-top:2px solid #318bb7;vertical-align:middle;margin-right:5px;"></span> Հաջորդ աստիճանի ենթավտակներ</div>
+      <p id="river-system-count" style="margin:6px 0;"></p>
+      <p style="margin:6px 0;color:#647780;">Ցուցադրվում են Ատլասում առկա ճյուղերը՝ անկախ մարզի և երկարության զտիչներից։ Մյուս գետերը խամրած են։ Փամբակն ու Ձորագետը Դեբեդը կազմավորող գետերն են։</p>
+      <button id="close-river-system" type="button" style="font:inherit;padding:5px 8px;cursor:pointer;">Փակել գետի համակարգը</button>
     </div>
 
     <!-- STATUS -->
@@ -525,7 +537,7 @@
 
 <!-- Atlas application -->
 
-<script src="app.js?v=20261013-without-basin"></script>
+<script src="app.js?v=20261013-debed-network"></script>
 
 </body>
 
