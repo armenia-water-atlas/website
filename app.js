@@ -2009,6 +2009,10 @@ function renderList(data) {
 
 
   list.innerHTML = '';
+  const emptyMessage = document.getElementById('header-object-list-empty');
+  if (emptyMessage) emptyMessage.hidden = data.length > 0;
+  const listCount = document.getElementById('header-object-list-count');
+  if (listCount) listCount.textContent = String(data.length);
 
 
   data.forEach(item => {
@@ -2019,6 +2023,7 @@ function renderList(data) {
 
     li.className =
       'object-item';
+    li.title = `${item.name_hy || 'Անանուն օբյեկտ'} — ${objectTypeLabel(item)}`;
 
 
     li.innerHTML = `
