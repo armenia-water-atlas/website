@@ -118,6 +118,67 @@ let markers = [];
 
 // One selection is shared by the list, map clicks and object URLs.
 // A separate, non-interactive overlay keeps mouseout from erasing selection.
+// Reviewed river-to-river connections for the first Debed network trial.
+// Existing Atlas descriptions, cross-checked against line junctions.
+const DEBED_RIVER_PARENTS = Object.freeze({"489":488,"526":488,"567":488,"563":488,"570":488,"564":488,"565":488,"643":488,"490":489,"492":489,"558":489,"559":489,"560":489,"561":489,"562":489,"628":489,"491":628,"556":490,"568":567,"569":568,"589":570,"581":526,"571":526,"572":526,"573":526,"574":526,"575":526,"576":526,"577":526,"578":526,"579":526,"580":526,"582":526,"583":526});
+const DEBED_SYSTEM_IDS = new Set([488, ...Object.keys(DEBED_RIVER_PARENTS).map(Number)]);
+let activeRiverSystemRoot = sharedAtlasView?.riverSystem === 'debed' ? 488 : null;
+let initialSharedRiverSystem = sharedAtlasView?.riverSystem || null;
+let pendingRiverSystemFit = false;
+function riverSystemDepth(id) {
+  let current = Number(id), depth = 0;
+  const visited = new Set();
+  while (current !== 488) {
+    if (visited.has(current) || !DEBED_RIVER_PARENTS[current]) return null;
+    visited.add(current);
+    current = DEBED_RIVER_PARENTS[current];
+    depth += 1;
+  }
+  return depth;
+}
+function getActiveRiverSystemObjects() {
+  return activeRiverSystemRoot === 488
+    ? allObjects.filter(item => item.type === 'river' && DEBED_SYSTEM_IDS.has(Number(item.id))) : [];
+}
+function riverSystemStyle(item) {
+  if (activeRiverSystemRoot !== 488 || item.type !== 'river') return null;
+  const depth = riverSystemDepth(item.id);
+  const styles = [
+    {color: '#e76f00', weight: 7, opacity: 1},
+    {color: '#7b3294', weight: 5, opacity: 1},
+    {color: '#087f8c', weight: 3.5, opacity: 1},
+    {color: '#318bb7', weight: 2, opacity: 1}
+  ];
+  return depth === null ? {color: '#91a4b3', weight: 1.5, opacity: 0.3}
+    : {...styles[Math.min(depth, 3)], lineCap: 'round', lineJoin: 'round'};
+}
+function syncRiverSystemLegend() {
+  const legend = document.getElementById('river-system-legend');
+  legend.hidden = activeRiverSystemRoot !== 488;
+  if (!legend.hidden) {
+    const items = getActiveRiverSystemObjects();
+    const ready = items.filter(item => geometryReadyIds.has(item.id) && item.geometry && !geometryLoadFailures.has(item.id)).length;
+    document.getElementById('river-system-count').textContent = `Ատլասում առկա ${items.length} գետից քարտեզագրված է ${ready}-ը։`;
+  }
+}
+function fitActiveRiverSystem() {
+  if (!pendingRiverSystemFit || activeRiverSystemRoot !== 488) return false;
+  const items = getActiveRiverSystemObjects();
+  if (!items.length || items.some(item => !geometryReadyIds.has(item.id))) return false;
+  pendingRiverSystemFit = false;
+  const features = items.filter(item => item.geometry && !geometryLoadFailures.has(item.id))
+    .map(item => ({type: 'Feature', properties: {}, geometry: item.geometry}));
+  const bounds = L.geoJSON({type: 'FeatureCollection', features}).getBounds();
+  if (!bounds.isValid()) return false;
+  map.fitBounds(bounds, {padding: [35, 35], maxZoom: 12, animate: false});
+  return true;
+}
+function closeRiverSystem() {
+  activeRiverSystemRoot = null;
+  pendingRiverSystemFit = false;
+  applyFilters();
+}
+
 let selectedObjectId = null;
 let selectedRiverLayer = null;
 let selectedRiverLabel = null;
@@ -181,7 +242,7 @@ function highlightSelectedRiver() {
     pane: 'selectedRiverPane',
     interactive: false,
     style: {
-      color: '#f07816', weight: 7, opacity: 1,
+      ...(riverSystemStyle(item) || {color: '#f07816', weight: 7, opacity: 1}),
       lineCap: 'round', lineJoin: 'round'
     }
   }).addTo(map);
@@ -190,7 +251,7 @@ function highlightSelectedRiver() {
   if (position) {
     const name = document.createElement('span');
     name.textContent = item.name_hy || 'Անանուն գետ';
-    name.style.color = '#9a4100';
+    name.style.color = riverSystemStyle(item)?.color || '#9a4100';
     name.style.fontWeight = '700';
     selectedRiverLabel = L.tooltip({
       permanent: true, direction: 'top', offset: [0, -6],
@@ -557,7 +618,7 @@ function parseSharedAtlasView(hash) {
   if (parts.length !== 3 || parts.some(value => !value.trim())) return null;
   const [zoom, lat, lng] = parts.map(Number);
   if (![zoom, lat, lng].every(Number.isFinite) || zoom < 0 || zoom > 19 || Math.abs(lat) > 85.05112878 || Math.abs(lng) > 180) return null;
-  return {zoom, lat, lng, types: (params.get('types') || '').split(',').filter(Boolean), region: params.get('region') || 'Հայաստան', query: (params.get('q') || '').slice(0, 200), riverMin: [0,10,25,50,100].includes(Number(params.get('riverMin'))) ? Number(params.get('riverMin')) : 0, riverUnknown: params.get('riverUnknown') !== '0'};
+  return {zoom, lat, lng, types: (params.get('types') || '').split(',').filter(Boolean), region: params.get('region') || 'Հայաստան', query: (params.get('q') || '').slice(0, 200), riverSystem: ['debed', 'none'].includes(params.get('riverSystem')) ? params.get('riverSystem') : null, riverMin: params.get('riverMin') === 'unknown' ? 'unknown' : ([0,10,25,50,100].includes(Number(params.get('riverMin'))) ? Number(params.get('riverMin')) : 0)};
 }
 function buildSharedAtlasUrl() {
   const center = map.getCenter();
@@ -567,8 +628,8 @@ function buildSharedAtlasUrl() {
   params.set('map', [map.getZoom().toFixed(1), center.lat.toFixed(6), lng.toFixed(6)].join('/'));
   params.set('types', getSelectedTypes().join(','));
   params.set('region', getSelectedRegion());
+  params.set('riverSystem', activeRiverSystemRoot === 488 ? 'debed' : 'none');
   params.set('riverMin', String(getRiverMinimumLength()));
-  params.set('riverUnknown', document.getElementById('river-include-unknown').checked ? '1' : '0');
   const query = document.getElementById('search').value.trim();
   if (query) params.set('q', query);
   url.hash = params.toString();
@@ -724,6 +785,12 @@ function focusObjectOnMap(
     findMapLayerByObjectId(
       item.id
     );
+
+  if (activeRiverSystemRoot === 488 && DEBED_SYSTEM_IDS.has(Number(item.id))) {
+    pendingRiverSystemFit = true;
+    fitActiveRiverSystem();
+    return;
+  }
 
   // Cascade symbols can be displaced for readability; fit their true positions.
   if (layer && layer.waterfallBounds && layer.waterfallBounds.isValid()) {
@@ -1627,7 +1694,7 @@ function renderMarkers(data) {
         L.geoJSON(
           item.geometry,
           {
-            style: geometryStyle
+            style: item.type === 'river' ? (riverSystemStyle(item) || geometryStyle) : geometryStyle
           }
         ).addTo(map);
 
@@ -1653,8 +1720,8 @@ function renderMarkers(data) {
               typeof part.setStyle === 'function'
             ) {
               part.setStyle({
-                ...geometryStyle,
-                weight: geometryStyle.weight + 2
+                ...(riverSystemStyle(item) || geometryStyle),
+                weight: (riverSystemStyle(item) || geometryStyle).weight + 2
               });
             }
           }
@@ -1667,7 +1734,7 @@ function renderMarkers(data) {
               typeof part.setStyle === 'function'
             ) {
               part.setStyle(
-                geometryStyle
+                riverSystemStyle(item) || geometryStyle
               );
             }
           }
@@ -1675,8 +1742,12 @@ function renderMarkers(data) {
 
         part.on(
           'click',
-          () => {
+          event => {
 
+            if (event.originalEvent && event.originalEvent.detail !== 0) {
+              const element = part.getElement && part.getElement();
+              if (element && typeof element.blur === 'function') element.blur();
+            }
             part.closeTooltip();
 
             openObjectDetails(
@@ -1944,6 +2015,13 @@ async function openObjectDetails(
 ) {
 
   selectedObjectId = Number(item.id);
+  if (item.type === 'river' && Number(item.id) === 488) activeRiverSystemRoot = initialSharedRiverSystem === 'none' ? null : 488;
+  else if (!(activeRiverSystemRoot === 488 && item.type === 'river' && DEBED_SYSTEM_IDS.has(Number(item.id)))) {
+    activeRiverSystemRoot = null;
+    pendingRiverSystemFit = false;
+  }
+  initialSharedRiverSystem = null;
+  applyFilters();
   highlightSelectedRiver();
 
   closeAllTooltips();
@@ -2160,10 +2238,8 @@ async function openObjectDetails(
     'Բեռնվում են աղբյուրները...';
 
 
-  panel.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start'
-  });
+  // Keep the map in place when selecting a river from either entry path.
+  if (item.type !== 'river') panel.scrollIntoView({behavior: 'smooth', block: 'start'});
 
 
   await Promise.all([
@@ -2182,6 +2258,9 @@ function closeObjectDetails(
 ) {
 
   selectedObjectId = null;
+  activeRiverSystemRoot = null;
+  pendingRiverSystemFit = false;
+  applyFilters();
   clearSelectedRiver();
 
   closeAllTooltips();
@@ -2853,14 +2932,17 @@ async function loadObjectSources(
    ========================================= */
 
 function getRiverMinimumLength() {
-  const value = Number(document.getElementById('river-min-length')?.value || 0);
+  const raw = document.getElementById('river-min-length')?.value || '0';
+  if (raw === 'unknown') return 'unknown';
+  const value = Number(raw);
   return [0, 10, 25, 50, 100].includes(value) ? value : 0;
 }
-function matchesRiverLength(item, minimum, includeUnknown) {
+function matchesRiverLength(item, minimum) {
   if (item.type !== 'river' || minimum === 0) return true;
   const length = item.length_km;
-  if (length === null || length === undefined || length === '' || !Number.isFinite(Number(length)) || Number(length) <= 0) return includeUnknown;
-  return Number(length) >= minimum;
+  const unknown = length === null || length === undefined || length === '' || !Number.isFinite(Number(length)) || Number(length) <= 0;
+  if (minimum === 'unknown') return unknown;
+  return !unknown && Number(length) >= minimum;
 }
 function syncRiverFilterVisibility() {
   document.getElementById('river-length-controls').hidden = !getSelectedTypes().includes('river');
@@ -3113,8 +3195,7 @@ function applyFilters() {
     ? regionObjects.filter(item => matchesAtlasSearch(item, search))
     : [];
   const minimumRiverLength = getRiverMinimumLength();
-  const includeUnknownRivers = document.getElementById('river-include-unknown').checked;
-  const enabledLayerObjects = regionObjects.filter(item => selectedTypes.includes(item.type) && matchesRiverLength(item, minimumRiverLength, includeUnknownRivers));
+  const enabledLayerObjects = regionObjects.filter(item => selectedTypes.includes(item.type) && matchesRiverLength(item, minimumRiverLength));
   const layerObjects = mergeObjectsById(searchObjects, enabledLayerObjects);
 
 
@@ -3133,13 +3214,13 @@ function applyFilters() {
 
   const mapObjects =
     mergeObjectsById(
-      layerObjects,
-      pinnedObjects
+      mergeObjectsById(layerObjects, pinnedObjects),
+      getActiveRiverSystemObjects()
     );
 
 
   // The side list includes search results and every enabled map layer.
-  const listObjects = mapObjects.filter(item => matchesSelectedRegion(item, selectedRegion));
+  const listObjects = mapObjects.filter(item => matchesSelectedRegion(item, selectedRegion) || (activeRiverSystemRoot === 488 && DEBED_SYSTEM_IDS.has(Number(item.id))));
 
 
   renderList(
@@ -3152,6 +3233,8 @@ function applyFilters() {
   );
 
   queueAtlasGeometry(mapObjects);
+  syncRiverSystemLegend();
+  fitActiveRiverSystem();
 
 
   if (
@@ -3761,7 +3844,8 @@ function ensureLayerControls() {
 
 
       document.getElementById('river-min-length').value = '0';
-      document.getElementById('river-include-unknown').checked = true;
+      activeRiverSystemRoot = null;
+      pendingRiverSystemFit = false;
       pinnedObjectIds.clear();
 
 
@@ -3973,9 +4057,12 @@ if (sharedAtlasView) {
   if (region && Array.from(region.options).some(option => option.value === sharedAtlasView.region)) region.value = sharedAtlasView.region;
   document.getElementById('search').value = sharedAtlasView.query;
   document.getElementById('river-min-length').value = String(sharedAtlasView.riverMin);
-  document.getElementById('river-include-unknown').checked = sharedAtlasView.riverUnknown;
 }
-for (const id of ['river-min-length', 'river-include-unknown']) document.getElementById(id).addEventListener('change', applyFilters);
+document.getElementById('river-min-length').addEventListener('change', applyFilters);
+document.getElementById('close-river-system').addEventListener('click', closeRiverSystem);
+map.getContainer().addEventListener('pointerdown', () => { pendingRiverSystemFit = false; });
+map.getContainer().addEventListener('wheel', () => { pendingRiverSystemFit = false; }, {passive: true});
+map.getContainer().addEventListener('keydown', () => { pendingRiverSystemFit = false; });
 syncRiverFilterVisibility();
 document.getElementById('share-map').addEventListener('click', copyAtlasView);
 map.on('movestart', clearShareMapNotice);
