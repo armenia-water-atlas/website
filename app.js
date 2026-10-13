@@ -2316,8 +2316,7 @@ async function openObjectDetails(
     'Բեռնվում են աղբյուրները...';
 
 
-  // Keep the map in place when selecting a river from either entry path.
-  if (item.type !== 'river') panel.scrollIntoView({behavior: 'smooth', block: 'start'});
+  // Keep the page in place for every object selected on the map or in the list.
 
 
   await Promise.all([
