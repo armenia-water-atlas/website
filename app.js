@@ -118,30 +118,53 @@ let markers = [];
 
 // One selection is shared by the list, map clicks and object URLs.
 // A separate, non-interactive overlay keeps mouseout from erasing selection.
-// Reviewed river-to-river connections for the first Debed network trial.
-// Existing Atlas descriptions, cross-checked against line junctions.
-const DEBED_RIVER_PARENTS = Object.freeze({"489":488,"526":488,"567":488,"563":488,"570":488,"564":488,"565":488,"643":488,"490":489,"492":489,"558":489,"559":489,"560":489,"561":489,"562":489,"628":489,"491":628,"556":490,"568":567,"569":568,"589":570,"581":526,"571":526,"572":526,"573":526,"574":526,"575":526,"576":526,"577":526,"578":526,"579":526,"580":526,"582":526,"583":526});
-const DEBED_SYSTEM_IDS = new Set([488, ...Object.keys(DEBED_RIVER_PARENTS).map(Number)]);
-let activeRiverSystemRoot = sharedAtlasView?.riverSystem === 'debed' ? 488 : null;
+// Receiving-river links come from the database. No fixed river ID list.
+let riverById = new Map();
+let riverChildren = new Map();
+let riverSystemDepths = new Map();
+let activeRiverSystemRoot = typeof sharedAtlasView?.riverSystem === 'number' ? sharedAtlasView.riverSystem : null;
 let initialSharedRiverSystem = sharedAtlasView?.riverSystem || null;
 let pendingRiverSystemFit = false;
-function riverSystemDepth(id) {
-  let current = Number(id), depth = 0;
-  const visited = new Set();
-  while (current !== 488) {
-    if (visited.has(current) || !DEBED_RIVER_PARENTS[current]) return null;
-    visited.add(current);
-    current = DEBED_RIVER_PARENTS[current];
-    depth += 1;
+function rebuildRiverGraph(items) {
+  riverById = new Map(items.filter(item => item.type === 'river').map(item => [Number(item.id), item]));
+  riverChildren = new Map();
+  for (const item of riverById.values()) {
+    const parent = Number(item.parent_river_id);
+    if (item.parent_river_id === null || item.parent_river_id === undefined || !riverById.has(parent) || parent === Number(item.id)) continue;
+    if (!riverChildren.has(parent)) riverChildren.set(parent, []);
+    riverChildren.get(parent).push(Number(item.id));
   }
-  return depth;
+  rebuildActiveRiverSystem();
+}
+function hasRiverSystem(id) {
+  return riverById.has(Number(id)) && (riverChildren.get(Number(id)) || []).length > 0;
+}
+function rebuildActiveRiverSystem() {
+  riverSystemDepths = new Map();
+  if (activeRiverSystemRoot === null || !hasRiverSystem(activeRiverSystemRoot)) {
+    activeRiverSystemRoot = null;
+    pendingRiverSystemFit = false;
+    return;
+  }
+  const queue = [Number(activeRiverSystemRoot)];
+  riverSystemDepths.set(Number(activeRiverSystemRoot), 0);
+  for (let offset = 0; offset < queue.length; offset += 1) {
+    const id = queue[offset];
+    for (const child of riverChildren.get(id) || []) {
+      if (riverSystemDepths.has(child)) continue;
+      riverSystemDepths.set(child, riverSystemDepths.get(id) + 1);
+      queue.push(child);
+    }
+  }
+}
+function riverSystemDepth(id) {
+  return riverSystemDepths.has(Number(id)) ? riverSystemDepths.get(Number(id)) : null;
 }
 function getActiveRiverSystemObjects() {
-  return activeRiverSystemRoot === 488
-    ? allObjects.filter(item => item.type === 'river' && DEBED_SYSTEM_IDS.has(Number(item.id))) : [];
+  return Array.from(riverSystemDepths.keys(), id => riverById.get(id));
 }
 function riverSystemStyle(item) {
-  if (activeRiverSystemRoot !== 488 || item.type !== 'river') return null;
+  if (activeRiverSystemRoot === null || item.type !== 'river') return null;
   const depth = riverSystemDepth(item.id);
   const styles = [
     {color: '#e76f00', weight: 7, opacity: 1},
@@ -149,20 +172,27 @@ function riverSystemStyle(item) {
     {color: '#087f8c', weight: 3.5, opacity: 1},
     {color: '#318bb7', weight: 2, opacity: 1}
   ];
-  return depth === null ? {color: '#91a4b3', weight: 1.5, opacity: 0.3}
-    : {...styles[Math.min(depth, 3)], lineCap: 'round', lineJoin: 'round'};
+  if (depth === null) return {color: '#91a4b3', weight: 1.5, opacity: 0.3};
+  const style = depth <= 3 ? styles[depth] : {
+    color: `hsl(${195 + ((depth - 3) % 4) * 22}, 60%, ${44 + Math.min((depth - 3) * 4, 16)}%)`,
+    weight: Math.max(1.2, 2 - (depth - 3) * 0.2), opacity: 1
+  };
+  return {...style, lineCap: 'round', lineJoin: 'round'};
 }
 function syncRiverSystemLegend() {
   const legend = document.getElementById('river-system-legend');
-  legend.hidden = activeRiverSystemRoot !== 488;
+  legend.hidden = activeRiverSystemRoot === null || !riverById.has(Number(activeRiverSystemRoot));
   if (!legend.hidden) {
+    const root = riverById.get(Number(activeRiverSystemRoot));
+    document.getElementById('river-system-name').textContent = `${root.name_hy || 'Ընտրված գետ'}․ գետային համակարգ`;
+    document.getElementById('river-system-main-name').textContent = root.name_hy || 'Հիմնական գետ';
     const items = getActiveRiverSystemObjects();
     const ready = items.filter(item => geometryReadyIds.has(item.id) && item.geometry && !geometryLoadFailures.has(item.id)).length;
     document.getElementById('river-system-count').textContent = `Ատլասում առկա ${items.length} գետից քարտեզագրված է ${ready}-ը։`;
   }
 }
 function fitActiveRiverSystem() {
-  if (!pendingRiverSystemFit || activeRiverSystemRoot !== 488) return false;
+  if (!pendingRiverSystemFit || activeRiverSystemRoot === null) return false;
   const items = getActiveRiverSystemObjects();
   if (!items.length || items.some(item => !geometryReadyIds.has(item.id))) return false;
   pendingRiverSystemFit = false;
@@ -176,6 +206,7 @@ function fitActiveRiverSystem() {
 function closeRiverSystem() {
   activeRiverSystemRoot = null;
   pendingRiverSystemFit = false;
+  rebuildActiveRiverSystem();
   applyFilters();
 }
 
@@ -611,6 +642,13 @@ function addDetailField(
    URL / HISTORY
    ========================================= */
 
+function parseRiverSystemParameter(value) {
+  if (value === 'none') return 'none';
+  if (value === 'debed') return 488; // Compatible with the first trial links.
+  if (!/^[1-9]\d*$/.test(value || '')) return null;
+  const id = Number(value);
+  return Number.isSafeInteger(id) ? id : null;
+}
 // Shared links contain map position and the visible filter choices.
 function parseSharedAtlasView(hash) {
   const params = new URLSearchParams(hash.replace(/^#/, ''));
@@ -618,7 +656,7 @@ function parseSharedAtlasView(hash) {
   if (parts.length !== 3 || parts.some(value => !value.trim())) return null;
   const [zoom, lat, lng] = parts.map(Number);
   if (![zoom, lat, lng].every(Number.isFinite) || zoom < 0 || zoom > 19 || Math.abs(lat) > 85.05112878 || Math.abs(lng) > 180) return null;
-  return {zoom, lat, lng, types: (params.get('types') || '').split(',').filter(Boolean), region: params.get('region') || 'Հայաստան', query: (params.get('q') || '').slice(0, 200), riverSystem: ['debed', 'none'].includes(params.get('riverSystem')) ? params.get('riverSystem') : null, riverMin: params.get('riverMin') === 'unknown' ? 'unknown' : ([0,10,25,50,100].includes(Number(params.get('riverMin'))) ? Number(params.get('riverMin')) : 0)};
+  return {zoom, lat, lng, types: (params.get('types') || '').split(',').filter(Boolean), region: params.get('region') || 'Հայաստան', query: (params.get('q') || '').slice(0, 200), riverSystem: parseRiverSystemParameter(params.get('riverSystem')), riverMin: params.get('riverMin') === 'unknown' ? 'unknown' : ([0,10,25,50,100].includes(Number(params.get('riverMin'))) ? Number(params.get('riverMin')) : 0)};
 }
 function buildSharedAtlasUrl() {
   const center = map.getCenter();
@@ -628,7 +666,7 @@ function buildSharedAtlasUrl() {
   params.set('map', [map.getZoom().toFixed(1), center.lat.toFixed(6), lng.toFixed(6)].join('/'));
   params.set('types', getSelectedTypes().join(','));
   params.set('region', getSelectedRegion());
-  params.set('riverSystem', activeRiverSystemRoot === 488 ? 'debed' : 'none');
+  params.set('riverSystem', activeRiverSystemRoot === null ? 'none' : String(activeRiverSystemRoot));
   params.set('riverMin', String(getRiverMinimumLength()));
   const query = document.getElementById('search').value.trim();
   if (query) params.set('q', query);
@@ -786,7 +824,7 @@ function focusObjectOnMap(
       item.id
     );
 
-  if (activeRiverSystemRoot === 488 && DEBED_SYSTEM_IDS.has(Number(item.id))) {
+  if (activeRiverSystemRoot !== null && riverSystemDepth(item.id) !== null) {
     pendingRiverSystemFit = true;
     fitActiveRiverSystem();
     return;
@@ -2015,12 +2053,14 @@ async function openObjectDetails(
 ) {
 
   selectedObjectId = Number(item.id);
-  if (item.type === 'river' && Number(item.id) === 488) activeRiverSystemRoot = initialSharedRiverSystem === 'none' ? null : 488;
-  else if (!(activeRiverSystemRoot === 488 && item.type === 'river' && DEBED_SYSTEM_IDS.has(Number(item.id)))) {
+  if (item.type === 'river' && hasRiverSystem(item.id) && !(activeRiverSystemRoot !== null && riverSystemDepth(item.id) !== null)) {
+    activeRiverSystemRoot = initialSharedRiverSystem === 'none' ? null : Number(item.id);
+  } else if (!(activeRiverSystemRoot !== null && item.type === 'river' && riverSystemDepth(item.id) !== null)) {
     activeRiverSystemRoot = null;
     pendingRiverSystemFit = false;
   }
   initialSharedRiverSystem = null;
+  rebuildActiveRiverSystem();
   applyFilters();
   highlightSelectedRiver();
 
@@ -2093,6 +2133,12 @@ async function openObjectDetails(
     'Ավազան',
     item.basin
   );
+
+
+  if (item.type === 'river' && item.parent_river_id != null) {
+    const receiver = riverById.get(Number(item.parent_river_id));
+    addDetailField(dataContainer, 'Թափվում է', receiver?.name_hy || null);
+  }
 
 
   addDetailField(
@@ -2260,6 +2306,7 @@ function closeObjectDetails(
   selectedObjectId = null;
   activeRiverSystemRoot = null;
   pendingRiverSystemFit = false;
+  rebuildActiveRiverSystem();
   applyFilters();
   clearSelectedRiver();
 
@@ -3220,7 +3267,7 @@ function applyFilters() {
 
 
   // The side list includes search results and every enabled map layer.
-  const listObjects = mapObjects.filter(item => matchesSelectedRegion(item, selectedRegion) || (activeRiverSystemRoot === 488 && DEBED_SYSTEM_IDS.has(Number(item.id))));
+  const listObjects = mapObjects.filter(item => matchesSelectedRegion(item, selectedRegion) || (activeRiverSystemRoot !== null && riverSystemDepth(item.id) !== null));
 
 
   renderList(
@@ -3476,7 +3523,7 @@ async function loadObjects() {
 
   const url =
     `${SUPABASE_URL}/rest/v1/water_objects` +
-    `?select=id,type,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m,river_name,cascade_name,installed_capacity_mw,available_capacity_mw,annual_generation_gwh,hydropower_kind,operation_regime,operator,water_source,average_delivery_gwh,average_delivery_period_start,average_delivery_period_end,delivery_group,group_average_delivery_gwh,actual_delivery_gwh_2025,hydropower_source_data` +
+    `?select=id,type,parent_river_id,name_hy,name_en,name_ru,province,basin,description_hy,status,latitude,longitude,elevation_m,length_km,area_km2,max_depth_m,volume_m3,discharge_m3s,year,height_m,height_min_m,height_max_m,river_name,cascade_name,installed_capacity_mw,available_capacity_mw,annual_generation_gwh,hydropower_kind,operation_regime,operator,water_source,average_delivery_gwh,average_delivery_period_start,average_delivery_period_end,delivery_group,group_average_delivery_gwh,actual_delivery_gwh_2025,hydropower_source_data` +
     `&order=name_hy.asc`;
 
 
@@ -3508,6 +3555,7 @@ async function loadObjects() {
     // Metadata and point symbols are immediately usable; selected map
     // geometries are fetched separately in batches.
     allObjects = loadedObjects;
+    rebuildRiverGraph(loadedObjects);
     objectsLoading = false;
 
     updateRiverOverviewStats();
@@ -3846,6 +3894,7 @@ function ensureLayerControls() {
       document.getElementById('river-min-length').value = '0';
       activeRiverSystemRoot = null;
       pendingRiverSystemFit = false;
+      rebuildActiveRiverSystem();
       pinnedObjectIds.clear();
 
 
