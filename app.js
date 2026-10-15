@@ -116,6 +116,34 @@ let objectsLoading = true;
 const geometryLoadFailures = new Set();
 let markers = [];
 
+// Cluster only point symbols; river/canal lines and water outlines stay on the map.
+const markerClusteringEnabled = typeof L.markerClusterGroup === 'function';
+const pointMarkerClusters = markerClusteringEnabled
+  ? L.markerClusterGroup({
+      maxClusterRadius: zoom => zoom >= 15 ? 24 : zoom >= 12 ? 38 :
+        (window.matchMedia('(max-width: 760px)').matches ? 64 : 52),
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyOnMaxZoom: true,
+      spiderfyDistanceMultiplier: 1.5,
+      animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+      animateAddingMarkers: false,
+      removeOutsideVisibleBounds: true,
+      iconCreateFunction: cluster => {
+        const children = cluster.getAllChildMarkers();
+        const count = new Set(children.map(marker =>
+          marker.waterObjectId ?? L.stamp(marker))).size;
+        const size = count >= 100 ? 52 : count >= 10 ? 46 : 40;
+        return L.divIcon({
+          className: 'atlas-marker-cluster',
+          html: `<span role="img" aria-label="${count} ջրային օբյեկտ">${count}</span>`,
+          iconSize: [size, size], iconAnchor: [size / 2, size / 2]
+        });
+      }
+    }).addTo(map)
+  : L.featureGroup().addTo(map);
+
+
 // One selection is shared by the list, map clicks and object URLs.
 // A separate, non-interactive overlay keeps mouseout from erasing selection.
 // Receiving-river links come from the database. No fixed river ID list.
@@ -332,6 +360,8 @@ function statusLabel(status) {
 
 function clearMarkers() {
 
+  pointMarkerClusters.clearLayers();
+
   clearSelectedRiver();
 
   markers.forEach(marker => {
@@ -361,6 +391,9 @@ function clearMarkers() {
  * becomes very small or disappears completely.
  */
 function layoutSmallLakeMarkers() {
+
+  // Markercluster owns separation and spider legs; never move its coordinates.
+  if (markerClusteringEnabled) return;
 
   if (!smallLakeCollisionMarkers.length) {
     return;
@@ -875,12 +908,13 @@ function focusObjectOnMap(
 
 
   map.setView(
-    [
-      item.latitude,
-      item.longitude
-    ],
-    zoom
+    [item.latitude, item.longitude],
+    Math.max(map.getZoom(), zoom)
   );
+  if (markerClusteringEnabled && layer instanceof L.Marker &&
+      pointMarkerClusters.hasLayer(layer)) {
+    pointMarkerClusters.zoomToShowLayer(layer, () => {});
+  }
 }
 
 
@@ -1554,6 +1588,7 @@ async function loadAtlasGeometryBatch(batch) {
 function renderMarkers(data) {
 
   clearMarkers();
+  const clusterMarkers = [];
 
   const mapped =
     data.filter(item => {
@@ -1644,7 +1679,7 @@ function renderMarkers(data) {
 
     if (waterfallPoints.length) {
       // One database object, with one custom symbol at each cascade location.
-      layer = L.featureGroup().addTo(map);
+      layer = L.featureGroup();
       layer.waterObjectId = item.id;
       layer.waterfallBounds = L.latLngBounds(waterfallPoints);
 
@@ -1712,7 +1747,7 @@ function renderMarkers(data) {
                     ? 580
                     : 500
           }
-        ).addTo(map);
+        );
 
       marker.bindTooltip(createAtlasHoverTooltip(buildHoverInfo(item), {
           direction: 'auto',
@@ -1878,7 +1913,7 @@ function renderMarkers(data) {
               icon: isReservoir ? createReservoirIcon(item.status) : createLakeIcon(),
               zIndexOffset: 700
             }
-          ).addTo(map);
+          );
 
         waterMarker.bindTooltip(createAtlasHoverTooltip(buildHoverInfo(item), {
             direction: 'auto',
@@ -1914,6 +1949,7 @@ function renderMarkers(data) {
         markers.push(
           waterMarker
         );
+        clusterMarkers.push(waterMarker);
       }
 
       // Geometry-bearing canals are represented by their real polyline only.
@@ -1932,7 +1968,7 @@ function renderMarkers(data) {
         L.marker([
           item.latitude,
           item.longitude
-        ]).addTo(map);
+        ]);
 
       marker.bindTooltip(createAtlasHoverTooltip(buildHoverInfo(item), {
           direction: 'auto',
@@ -1969,9 +2005,16 @@ function renderMarkers(data) {
         marker;
     }
 
+    if (layer instanceof L.Marker) clusterMarkers.push(layer);
+    else if (layer.waterfallBounds) clusterMarkers.push(...layer.getLayers());
     markers.push(layer);
   });
 
+  if (markerClusteringEnabled) {
+    pointMarkerClusters.addLayers(clusterMarkers);
+  } else {
+    clusterMarkers.forEach(marker => pointMarkerClusters.addLayer(marker));
+  }
   layoutSmallLakeMarkers();
   highlightSelectedRiver();
 
@@ -4180,3 +4223,4 @@ renderList([]);
 renderMarkers([]);
 document.getElementById('status').textContent = 'Տվյալները բեռնվում են…';
 loadObjects();
+

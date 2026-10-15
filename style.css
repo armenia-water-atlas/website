@@ -915,3 +915,12 @@ header.site-header .site-header-copy { min-width: 0; }
   header.site-header .site-title { font-size: 18px; }
   header.site-header .site-subtitle { font-size: 12px; }
 }
+
+
+/* Counts of nearby water objects, with a touch-friendly target. */
+.atlas-marker-cluster { border: 3px solid #1976d2; border-radius: 50%;
+  background: #fff; color: #125893; box-sizing: border-box;
+  box-shadow: 0 1px 5px rgba(0,0,0,.28); font: 700 16px/1 Arial,sans-serif;
+  display: flex !important; align-items: center; justify-content: center; }
+.atlas-marker-cluster:focus-visible { outline: 3px solid #ef9600; outline-offset: 3px; }
+.atlas-marker-cluster span { pointer-events: none; }
